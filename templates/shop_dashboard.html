@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block title %}Shop Owner Dashboard - SafeTour{% endblock %}
+
+{% block content %}
+<div class="dashboard-container animate-fade">
+    <div class="dashboard-header">
+        <div>
+            <h2><i class="fa-solid fa-store text-gradient"></i> {{ shop.name }} Dashboard</h2>
+            <p class="dashboard-sub">Manage your location mapping, directions, deals, and promotional campaigns.</p>
+        </div>
+        <div class="plan-status-badge {% if shop.subscription_plan == 'premium' %}premium-badge-style{% else %}basic-badge-style{% endif %}">
+            <i class="fa-solid {% if shop.subscription_plan == 'premium' %}fa-crown{% else %}fa-star-half-stroke{% endif %}"></i>
+            <span>{{ shop.subscription_plan|upper }} PLAN (₹{% if shop.subscription_plan == 'premium' %}150{% else %}100{% endif %}/mo)</span>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon icon-views"><i class="fa-solid fa-eye"></i></div>
+            <div class="stat-info">
+                <h3>142</h3>
+                <p>Profile Views</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-claims"><i class="fa-solid fa-ticket"></i></div>
+            <div class="stat-info">
+                <h3>38</h3>
+                <p>Coupon Claims</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-safety"><i class="fa-solid fa-shield-check"></i></div>
+            <div class="stat-info">
+                <h3>4.9 / 5</h3>
+                <p>Safety Verified Score</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-layout">
+        <!-- Left Panel: Shop Management Details -->
+        <div class="panel-left">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-circle-info"></i> Update Shop Coordinates & Info</h3>
+                <form action="{{ url_for('update_shop') }}" method="POST" class="dashboard-form">
+                    <div class="form-group">
+                        <label for="shop_name">Shop / Restaurant Name</label>
+                        <input type="text" id="shop_name" name="name" value="{{ shop.name }}" required class="form-control">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="latitude">Latitude</label>
+                            <input type="number" step="any" id="latitude" name="latitude" value="{{ shop.latitude or '' }}" required placeholder="e.g. 28.6139" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude</label>
+                            <input type="number" step="any" id="longitude" name="longitude" value="{{ shop.longitude or '' }}" required placeholder="e.g. 77.2090" class="form-control">
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secondary btn-small" onclick="fetchGPSLocation()"><i class="fa-solid fa-location-crosshairs"></i> Autofill My Current GPS</button>
+
+                    <div class="form-group">
+                        <label for="address">Full Address</label>
+                        <textarea id="address" name="address" required rows="2" class="form-control">{{ shop.address or '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="landmarks">Key Landmarks (Near landmarks)</label>
+                        <input type="text" id="landmarks" name="landmarks" value="{{ shop.landmarks or '' }}" required placeholder="e.g. Near clock tower, next to bank ATM" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ways_to_reach">How to Reach (Directions)</label>
+                        <textarea id="ways_to_reach" name="ways_to_reach" required rows="2" placeholder="e.g. Take auto from station to main bazar street (approx ₹50)." class="form-control">{{ shop.ways_to_reach or '' }}</textarea>
+                    </div>
+
+                    <!-- Fancy Description (ONLY Unlocked for Premium Plan) -->
+                    <div class="form-group premium-feature-block">
+                        <label for="fancy_description">
+                            <i class="fa-solid fa-crown text-gold"></i> Fancy Promotional Description 
+                            {% if shop.subscription_plan == 'basic' %}
+                                <span class="badge-locked"><i class="fa-solid fa-lock"></i> Locked (Premium Only)</span>
+                            {% endif %}
+                        </label>
+                        <textarea id="fancy_description" name="fancy_description" rows="3" 
+                                  placeholder="e.g. Visit us to experience organic traditional food served under a rooftop garden canopy." 
+                                  class="form-control" {% if shop.subscription_plan == 'basic' %}disabled{% endif %}>{{ shop.fancy_description or '' }}</textarea>
+                        {% if shop.subscription_plan == 'basic' %}
+                            <p class="premium-notice">Upgrade to ₹150 plan to unlock fancy descriptions and attract 3x more tourists!</p>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Shop Settings</button>
+                </form>
+            </div>
+            
+            {% if shop.subscription_plan == 'basic' %}
+            <div class="glass-card promo-card">
+                <h3><i class="fa-solid fa-bullhorn text-gold"></i> Upgrade to Premium Promotion</h3>
+                <p>For just <strong>₹50 extra per month</strong>, display custom taglines, get a shiny star marker on the map, and rank at the top of the search feed.</p>
+                <form action="{{ url_for('upgrade_plan') }}" method="POST">
+                    <button type="submit" class="btn-upgrade"><i class="fa-solid fa-crown"></i> Upgrade to ₹150 Plan Now</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Panel: Deals & Active Coupons -->
+        <div class="panel-right">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-tags"></i> Active Tourist Coupons</h3>
+                <p class="panel-desc">Define exclusive discounts to display on the map when tourists search your area.</p>
+
+                <!-- List of existing deals -->
+                <div class="deals-list">
+                    {% if shop.deals %}
+                        {% for deal in shop.deals %}
+                            <div class="deal-item">
+                                <div class="deal-details">
+                                    <span class="deal-title">{{ deal.title }}</span>
+                                    <p class="deal-desc">{{ deal.description }}</p>
+                                </div>
+                                <form action="{{ url_for('delete_deal', index=loop.index0) }}" method="POST">
+                                    <button type="submit" class="btn-delete" title="Delete Deal"><i class="fa-solid fa-trash-can"></i></button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-items">
+                            <i class="fa-solid fa-ticket-slash"></i>
+                            <p>No active coupons posted yet. Create one below!</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <hr class="card-divider">
+
+                <!-- Add new deal form -->
+                <h4>Create New Coupon</h4>
+                <form action="{{ url_for('add_deal') }}" method="POST" class="dashboard-form">
+                    <div class="form-group">
+                        <label for="deal_title">Coupon Title</label>
+                        <input type="text" id="deal_title" name="title" required placeholder="e.g. 15% OFF on total bill" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="deal_desc">Coupon Details</label>
+                        <textarea id="deal_desc" name="description" required rows="2" placeholder="e.g. Minimum bill value ₹500. Not valid on weekends." class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary btn-small"><i class="fa-solid fa-plus"></i> Post Coupon</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function fetchGPSLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+            }, function(error) {
+                alert("Error getting location: " + error.message);
+            });
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    }
+</script>
+{% endblock %}

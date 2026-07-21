@@ -1,0 +1,28 @@
+# Virtual environment
+venv/
+venv_new/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables containing credentials
+.env
+
+# Local logs and tunnel config outputs
+pinggy.txt
+pinggy_output.txt
+pinggy_t.txt
+pinggy_url.txt
+localhost_run_url.txt
+localhost_run_url_t.txt
+
+# Executables
+cloudflared.exe
+
+# Helper scripts
+download_cf.py
+run_localhost_run.py
+run_tunnel.py

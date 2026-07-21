@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set active_page = 'home' %}
+
+{% block title %}SafeTour - Plan Safely & Discover Smart Deals{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title animate-fade">Travel Securely, <br>Support <span class="text-gradient">Local Businesses</span></h1>
+        <p class="hero-subtitle">Get real-time weather forecasts, regional safety updates, and access verified restaurant discounts tailored to your travel dates.</p>
+        
+        <div class="gateway-container">
+            <!-- Tourist Card -->
+            <div class="gateway-card tourist-card">
+                <div class="card-icon">
+                    <i class="fa-solid fa-compass-drafting"></i>
+                </div>
+                <h3>For Tourists</h3>
+                <p>Plan your itinerary, check date-specific weather forecasts, map out safe locations, and unlock active deals from nearby partner shops.</p>
+                {% if session.get('role') == 'tourist' %}
+                    <a href="{{ url_for('tourist_dashboard') }}" class="btn-primary">Go to Tourist Hub <i class="fa-solid fa-arrow-right"></i></a>
+                {% else %}
+                    <a href="{{ url_for('login', role_hint='tourist') }}" class="btn-primary">Explore as Tourist <i class="fa-solid fa-arrow-right"></i></a>
+                {% endif %}
+            </div>
+
+            <!-- Shop Owner Card -->
+            <div class="gateway-card shop-card">
+                <div class="card-icon">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <h3>For Shop Owners</h3>
+                <p>Register your store/restaurant, list detailed landmarks & directions, offer exclusive tourist coupons, and boost sales with premium promotion plans.</p>
+                {% if session.get('role') == 'shop_owner' %}
+                    <a href="{{ url_for('shop_dashboard') }}" class="btn-secondary">Go to Shop Dashboard <i class="fa-solid fa-arrow-right"></i></a>
+                {% else %}
+                    <a href="{{ url_for('login', role_hint='shop_owner') }}" class="btn-secondary">Register Business <i class="fa-solid fa-arrow-right"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Highlights section -->
+<section class="info-section">
+    <h2 class="section-title">Why Choose SafeTour?</h2>
+    <div class="features-grid">
+        <div class="feature-box">
+            <i class="fa-solid fa-cloud-sun"></i>
+            <h4>Date-Specific Weather</h4>
+            <p>Don't just check today's weather. Input your exact travel dates and see forecasts to plan what to pack and when to go.</p>
+        </div>
+        <div class="feature-box">
+            <i class="fa-solid fa-route"></i>
+            <h4>Landmarks & Directions</h4>
+            <p>Get precise ways-to-reach guides and nearby landmarks written directly by local shop owners to never get lost.</p>
+        </div>
+        <div class="feature-box">
+            <i class="fa-solid fa-tags"></i>
+            <h4>Exclusive Verified Deals</h4>
+            <p>Save money by accessing discount coupons from certified partner restaurants in the area.</p>
+        </div>
+        <div class="feature-box">
+            <i class="fa-solid fa-bullhorn"></i>
+            <h4>Flexible Promotion Plans</h4>
+            <p>Shop owners can choose a ₹100 basic directory listing or a ₹150 plan to stand out and reach more tourists.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

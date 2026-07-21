@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Register Account - SafeTour{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card register-card">
+        <h2 class="auth-title">Create Account</h2>
+        <p class="auth-subtitle">Join SafeTour as a tourist or local business partner</p>
+        
+        <form action="{{ url_for('register') }}" method="POST" class="auth-form" id="register-form">
+            <div class="form-group">
+                <label for="name"><i class="fa-solid fa-user"></i> Full Name</label>
+                <input type="text" id="name" name="name" required placeholder="John Doe" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="john@example.com" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="password"><i class="fa-solid fa-lock"></i> Password</label>
+                <input type="password" id="password" name="password" required placeholder="Min 6 characters" minlength="6" class="form-control">
+            </div>
+
+            <!-- Role Selection -->
+            <div class="form-group">
+                <label><i class="fa-solid fa-users-gear"></i> I want to register as a:</label>
+                <div class="role-selector">
+                    <label class="role-option">
+                        <input type="radio" name="role" value="tourist" {% if role_hint != 'shop_owner' %}checked{% endif %} id="role-tourist">
+                        <div class="role-box">
+                            <i class="fa-solid fa-umbrella-beach"></i>
+                            <span>Tourist</span>
+                        </div>
+                    </label>
+                    <label class="role-option">
+                        <input type="radio" name="role" value="shop_owner" {% if role_hint == 'shop_owner' %}checked{% endif %} id="role-shop">
+                        <div class="role-box">
+                            <i class="fa-solid fa-store"></i>
+                            <span>Shop Owner</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Shop Details Setup (hidden dynamically if tourist is selected) -->
+            <div id="shop-details-container" class="fade-in" style="display: {% if role_hint == 'shop_owner' %}block{% else %}none{% endif %};">
+                <hr class="form-divider">
+                <h3 class="subsection-title"><i class="fa-solid fa-circle-info"></i> Restaurant / Shop Setup</h3>
+                
+                <div class="form-group">
+                    <label for="shop_name">Business Name</label>
+                    <input type="text" id="shop_name" name="shop_name" placeholder="e.g. Spice Garden Restaurant" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Business Category</label>
+                    <select id="category" name="category" class="form-control">
+                        <option value="Restaurant">Restaurant / Diner</option>
+                        <option value="Hotel">Hotel / Homestay</option>
+                        <option value="Souvenir">Souvenir Shop</option>
+                        <option value="Medical">Medical / Pharmacy</option>
+                    </select>
+                </div>
+
+                <!-- Subscription Plans (₹100 vs ₹150) -->
+                <div class="form-group">
+                    <label><i class="fa-solid fa-credit-card"></i> Choose Business Listing Plan:</label>
+                    <div class="plan-selector">
+                        <label class="plan-option">
+                            <input type="radio" name="subscription_plan" value="basic" checked>
+                            <div class="plan-box">
+                                <span class="plan-title">Basic Directory</span>
+                                <span class="plan-price">₹100<span class="plan-duration">/mo</span></span>
+                                <p class="plan-desc">Standard database mapping, address, and coupon display.</p>
+                            </div>
+                        </label>
+                        <label class="plan-option">
+                            <input type="radio" name="subscription_plan" value="premium">
+                            <div class="plan-box premium-border">
+                                <div class="premium-badge"><i class="fa-solid fa-crown"></i> PROMOTED</div>
+                                <span class="plan-title">Featured Promotion</span>
+                                <span class="plan-price">₹150<span class="plan-duration">/mo</span></span>
+                                <p class="plan-desc">Includes custom marketing taglines, prioritized map pins, and top listing feed.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">Sign Up & Continue <i class="fa-solid fa-arrow-right"></i></button>
+        </form>
+
+        <p class="auth-footer">
+            Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const touristRadio = document.getElementById('role-tourist');
+        const shopRadio = document.getElementById('role-shop');
+        const shopContainer = document.getElementById('shop-details-container');
+        const shopNameInput = document.getElementById('shop_name');
+
+        function toggleShopFields() {
+            if (shopRadio.checked) {
+                shopContainer.style.display = 'block';
+                shopNameInput.required = true;
+            } else {
+                shopContainer.style.display = 'none';
+                shopNameInput.required = false;
+            }
+        }
+
+        touristRadio.addEventListener('change', toggleShopFields);
+        shopRadio.addEventListener('change', toggleShopFields);
+    });
+</script>
+{% endblock %}

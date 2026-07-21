@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block title %}Tourist Planner - SafeTour{% endblock %}
+
+{% block content %}
+<div class="dashboard-container animate-fade">
+    <div class="dashboard-header">
+        <div>
+            <h2><i class="fa-solid fa-compass-drafting text-gradient"></i> Tourist Hub & Itinerary Planner</h2>
+            <p class="dashboard-sub">Select your target destination and planned travel dates to load safety alerts, forecasts, maps, and local coupons.</p>
+        </div>
+    </div>
+
+    <!-- Location & Date Search Panel -->
+    <div class="glass-card planner-search-card">
+        <form action="{{ url_for('tourist_dashboard') }}" method="GET" class="search-form-layout">
+            <div class="search-field">
+                <label for="location_input"><i class="fa-solid fa-map-location-dot"></i> Enter Destination</label>
+                <input type="text" id="location_input" name="location" value="{{ search_location or 'New Delhi' }}" required placeholder="e.g. New Delhi, Goa, Manali" class="form-control">
+            </div>
+            
+            <div class="search-field">
+                <label for="date_input"><i class="fa-solid fa-calendar-days"></i> Travel Date</label>
+                <input type="date" id="date_input" name="travel_date" value="{{ travel_date or '2026-08-01' }}" required class="form-control">
+            </div>
+            
+            <div class="search-btn-container">
+                <button type="submit" class="btn-primary btn-search"><i class="fa-solid fa-plane-departure"></i> Plan My Tour</button>
+            </div>
+        </form>
+    </div>
+
+    {% if search_location %}
+    <div class="tourist-grid">
+        <!-- Center Panel: Interactive Map & Live Details -->
+        <div class="main-map-panel">
+            <div class="glass-card map-card">
+                <div class="map-card-header">
+                    <h3><i class="fa-solid fa-map"></i> SafeTour Location Map: {{ search_location }}</h3>
+                    <div class="map-legend">
+                        <span><span class="legend-dot legend-premium"></span> Promoted Partner</span>
+                        <span><span class="legend-dot legend-basic"></span> Basic Partner</span>
+                        <span><span class="legend-dot legend-external"></span> Famous Unlisted</span>
+                        <span><span class="legend-dot legend-sight"></span> Sightseeing Spot</span>
+                    </div>
+                </div>
+                <!-- Leaflet Map Container -->
+                <div id="tourist-map" class="map-view-box"></div>
+            </div>
+
+            <!-- Weather and Safety Alerts Columns -->
+            <div class="weather-safety-row">
+                <!-- Weather Prediction Card -->
+                <div class="glass-card flex-half">
+                    <h3><i class="fa-solid fa-cloud-sun"></i> Weather Forecast for {{ travel_date }}</h3>
+                    <div class="weather-display" id="weather-box">
+                        <div class="weather-main">
+                            <span class="temp-val">{{ weather.temp }}°C</span>
+                            <span class="weather-desc"><i class="fa-solid {{ weather.icon_class }}"></i> {{ weather.condition }}</span>
+                        </div>
+                        <p class="weather-alert-text"><strong>Packing Advisory:</strong> {{ weather.advisory }}</p>
+                    </div>
+                </div>
+
+                <!-- Local Safety Alerts & News Card -->
+                <div class="glass-card flex-half">
+                    <h3><i class="fa-solid fa-bullhorn"></i> Safety Alerts & Local News</h3>
+                    <div class="alerts-feed">
+                        {% if news %}
+                            {% for item in news %}
+                                <div class="news-item">
+                                    <span class="news-badge {% if item.severity == 'Warning' %}badge-warning{% else %}badge-info{% endif %}">
+                                        {{ item.severity }}
+                                    </span>
+                                    <span class="news-time">{{ item.source }}</span>
+                                    <h4>{{ item.title }}</h4>
+                                    <p>{{ item.content }}</p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-items">No critical alerts found for this area. Stay safe!</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Panel: Recommendations & Partner Deals -->
+        <div class="sidebar-panel">
+            <!-- 1. Partner Restaurants & Shops (Listed) -->
+            <div class="glass-card sidebar-card">
+                <div class="card-header-styled">
+                    <h3><i class="fa-solid fa-store"></i> Listed Partner Shops</h3>
+                    <span class="count-badge">{{ listed_shops|length }}</span>
+                </div>
+                <p class="section-subtext">Verified stores offering exclusive safety and active discount codes.</p>
+                
+                <div class="list-container">
+                    {% if listed_shops %}
+                        {% for shop in listed_shops %}
+                            <div class="sidebar-item-card {% if shop.subscription_plan == 'premium' %}premium-highlight{% endif %}">
+                                <div class="card-title-row">
+                                    <h4>{{ shop.name }}</h4>
+                                    {% if shop.subscription_plan == 'premium' %}
+                                        <span class="badge-premium"><i class="fa-solid fa-crown"></i> PROMOTED</span>
+                                    {% endif %}
+                                </div>
+                                <span class="category-tag">{{ shop.category }}</span>
+                                
+                                {% if shop.subscription_plan == 'premium' and shop.fancy_description %}
+                                    <p class="fancy-text">"{{ shop.fancy_description }}"</p>
+                                {% endif %}
+                                
+                                <p class="route-text"><i class="fa-solid fa-location-arrow"></i> <strong>Landmark:</strong> {{ shop.landmarks }}</p>
+                                <p class="route-directions"><strong>Directions:</strong> {{ shop.ways_to_reach }}</p>
+                                
+                                {% if shop.deals %}
+                                    <div class="coupon-tag">
+                                        <i class="fa-solid fa-tags"></i> 
+                                        <strong>Active Deal:</strong> {{ shop.deals[0].title }} - <span class="deal-highlight">{{ shop.deals[0].description }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-items-mini">
+                            <p>No partner stores registered in this location yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 2. Famous Sightseeing spots -->
+            <div class="glass-card sidebar-card">
+                <div class="card-header-styled">
+                    <h3><i class="fa-solid fa-monument"></i> Sightseeing & Tickets</h3>
+                    <span class="count-badge">{{ sightseeing_spots|length }}</span>
+                </div>
+                <div class="list-container">
+                    {% for spot in sightseeing_spots %}
+                        <div class="sidebar-item-card text-light">
+                            <h4>{{ spot.name }}</h4>
+                            <span class="category-tag border-cyan">Sightseeing</span>
+                            <p class="card-desc">{{ spot.description }}</p>
+                            <div class="ticket-price-box">
+                                <i class="fa-solid fa-ticket"></i> Entry Fee: <span class="price-val">{{ spot.ticket_price }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. Famous Unlisted Restaurants -->
+            <div class="glass-card sidebar-card">
+                <div class="card-header-styled">
+                    <h3><i class="fa-solid fa-utensils"></i> Famous Unlisted Diners</h3>
+                    <span class="count-badge">{{ unlisted_shops|length }}</span>
+                </div>
+                <p class="section-subtext">Highly rated big-brand spots in the area (external reviews).</p>
+                
+                <div class="list-container">
+                    {% for shop in unlisted_shops %}
+                        <div class="sidebar-item-card text-light">
+                            <div class="card-title-row">
+                                <h4>{{ shop.name }}</h4>
+                                <span class="rating-badge"><i class="fa-solid fa-star"></i> {{ shop.rating }}</span>
+                            </div>
+                            <span class="category-tag border-purple">{{ shop.category }}</span>
+                            <p class="route-text"><i class="fa-solid fa-map-pin"></i> {{ shop.address }}</p>
+                            <p class="external-source"><i class="fa-solid fa-circle-info"></i> {{ shop.source }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if search_location %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Initialize Map centered on the location coordinates
+        const mapLatitude = {{ map_center[0] }};
+        const mapLongitude = {{ map_center[1] }};
+        
+        const map = L.map('tourist-map').setView([mapLatitude, mapLongitude], 14);
+        
+        // Add map tiles (using highly styled dark mode tiles or standard osm)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Marker Icons configurations
+        const premiumIcon = L.divIcon({
+            html: '<div class="marker-wrapper"><div class="marker-pin marker-premium-pin"><i class="fa-solid fa-crown"></i></div></div>',
+            className: 'custom-div-icon',
+            iconSize: [36, 42],
+            iconAnchor: [18, 42],
+            popupAnchor: [0, -38]
+        });
+
+        const basicIcon = L.divIcon({
+            html: '<div class="marker-wrapper"><div class="marker-pin marker-basic-pin"><i class="fa-solid fa-store"></i></div></div>',
+            className: 'custom-div-icon',
+            iconSize: [32, 38],
+            iconAnchor: [16, 38],
+            popupAnchor: [0, -34]
+        });
+
+        const externalIcon = L.divIcon({
+            html: '<div class="marker-wrapper"><div class="marker-pin marker-external-pin"><i class="fa-solid fa-utensils"></i></div></div>',
+            className: 'custom-div-icon',
+            iconSize: [32, 38],
+            iconAnchor: [16, 38],
+            popupAnchor: [0, -34]
+        });
+
+        const sightIcon = L.divIcon({
+            html: '<div class="marker-wrapper"><div class="marker-pin marker-sight-pin"><i class="fa-solid fa-monument"></i></div></div>',
+            className: 'custom-div-icon',
+            iconSize: [32, 38],
+            iconAnchor: [16, 38],
+            popupAnchor: [0, -34]
+        });
+
+        // 1. Plot Listed Partner Shops
+        {% for shop in listed_shops %}
+            {% if shop.latitude and shop.longitude %}
+                L.marker([{{ shop.latitude }}, {{ shop.longitude }}], {
+                    icon: {% if shop.subscription_plan == 'premium' %}premiumIcon{% else %}basicIcon{% endif %}
+                }).addTo(map)
+                .bindPopup(`
+                    <div class="map-popup">
+                        <h4 class="popup-title">{{ shop.name }}</h4>
+                        <span class="popup-plan {% if shop.subscription_plan == 'premium' %}plan-premium-tag{% endif %}">
+                            {{ shop.subscription_plan|upper }} Partner
+                        </span>
+                        {% if shop.fancy_description %}
+                            <p class="popup-desc">"{{ shop.fancy_description }}"</p>
+                        {% endif %}
+                        <p class="popup-landmark"><strong>Directions:</strong> {{ shop.ways_to_reach }}</p>
+                        {% if shop.deals %}
+                            <div class="popup-coupon">
+                                <i class="fa-solid fa-tag"></i> <strong>Deal:</strong> {{ shop.deals[0].title }}
+                            </div>
+                        {% endif %}
+                    </div>
+                `);
+            {% endif %}
+        {% endfor %}
+
+        // 2. Plot Unlisted Restaurants
+        {% for shop in unlisted_shops %}
+            {% if shop.latitude and shop.longitude %}
+                L.marker([{{ shop.latitude }}, {{ shop.longitude }}], { icon: externalIcon }).addTo(map)
+                .bindPopup(`
+                    <div class="map-popup">
+                        <h4 class="popup-title">{{ shop.name }}</h4>
+                        <span class="popup-rating"><i class="fa-solid fa-star"></i> {{ shop.rating }} / 5</span>
+                        <p class="popup-landmark">{{ shop.address }}</p>
+                        <p class="popup-source"><em>Source: {{ shop.source }}</em></p>
+                    </div>
+                `);
+            {% endif %}
+        {% endfor %}
+
+        // 3. Plot Sightseeing Spots
+        {% for spot in sightseeing_spots %}
+            {% if spot.latitude and spot.longitude %}
+                L.marker([{{ spot.latitude }}, {{ spot.longitude }}], { icon: sightIcon }).addTo(map)
+                .bindPopup(`
+                    <div class="map-popup">
+                        <h4 class="popup-title">{{ spot.name }}</h4>
+                        <p class="popup-desc">{{ spot.description }}</p>
+                        <div class="popup-ticket"><i class="fa-solid fa-ticket"></i> Entry: {{ spot.ticket_price }}</div>
+                    </div>
+                `);
+            {% endif %}
+        {% endfor %}
+    });
+</script>
+{% endif %}
+{% endblock %}
