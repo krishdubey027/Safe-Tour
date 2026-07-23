@@ -77,11 +77,20 @@
                         {% if news %}
                             {% for item in news %}
                                 <div class="news-item">
-                                    <span class="news-badge {% if item.severity == 'Warning' %}badge-warning{% else %}badge-info{% endif %}">
+                                    <span class="news-badge {% if item.severity == 'Warning' %}badge-warning{% elif item.severity == 'Breaking News' %}badge-warning{% else %}badge-info{% endif %}"
+                                          style="{% if item.severity == 'Breaking News' %}background-color: #d93025; color: white;{% endif %}">
                                         {{ item.severity }}
                                     </span>
                                     <span class="news-time">{{ item.source }}</span>
-                                    <h4>{{ item.title }}</h4>
+                                    <h4>
+                                        {% if item.url %}
+                                            <a href="{{ item.url }}" target="_blank" style="color: inherit; text-decoration: none; border-bottom: 1px dashed var(--accent); transition: 0.2s;" title="Read full coverage on {{ item.source }}">
+                                                {{ item.title }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px; margin-left: 4px; color: var(--accent);"></i>
+                                            </a>
+                                        {% else %}
+                                            {{ item.title }}
+                                        {% endif %}
+                                    </h4>
                                     <p>{{ item.content }}</p>
                                 </div>
                             {% endfor %}

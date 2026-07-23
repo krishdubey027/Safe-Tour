@@ -168,32 +168,46 @@ def get_live_weather(lat, lon, travel_date):
 
 def get_live_news(search_location):
     """
-    Attempts to fetch real-time news from GNews API using an environment key.
-    Falls back to pre-seeded local safety advisory feeds if no key or error.
+    Fetches real-time breaking news headlines for the searched city from Google News RSS feed.
+    Requires no API keys, completely free, and retrieves current live articles.
     """
-    news_api_key = os.getenv('NEWS_API_KEY')
-    if not news_api_key:
-        return None
-        
+    import urllib.parse
+    import xml.etree.ElementTree as ET
+    
     try:
-        # Search for location-specific safety, weather, or travel news
-        query = f'"{search_location}" AND (weather OR rain OR flood OR warning OR safety)'
-        url = f"https://gnews.io/api/v4/search?q={query}&lang=en&country=in&max=3&apikey={news_api_key}"
-        response = requests.get(url, timeout=3).json()
+        # URL encode the search query
+        encoded_query = urllib.parse.quote(search_location)
+        # Query Google News RSS for India region
+        url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-IN&gl=IN&ceid=IN:en"
         
-        articles = response.get('articles', [])
-        if articles:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = requests.get(url, headers=headers, timeout=3)
+        
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
             news_results = []
-            for art in articles:
+            
+            # Extract top 4 breaking news articles
+            for item in root.findall('.//item')[:4]:
+                title = item.find('title').text
+                link = item.find('link').text
+                source = item.find('source').text if item.find('source') is not None else 'Google News'
+                
+                # Strip the source suffix from titles (e.g. "Headline - NDTV" -> "Headline")
+                clean_title = title
+                if " - " in title:
+                    clean_title = " - ".join(title.split(" - ")[:-1])
+                
                 news_results.append({
-                    'title': art.get('title', 'Local Update'),
-                    'content': art.get('description', 'Read full article on source website.'),
-                    'severity': 'General Alert',
-                    'source': art.get('source', {}).get('name', 'GNews API')
+                    'title': clean_title,
+                    'content': f"Live coverage of this local event. Click the headline to read full report.",
+                    'severity': 'Breaking News',
+                    'source': source,
+                    'url': link
                 })
             return news_results
     except Exception as e:
-        print(f"News API fetch failed: {e}")
+        print(f"News RSS fetch failed: {e}")
     return None
 
 seed_mock_data()
