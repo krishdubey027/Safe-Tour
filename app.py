@@ -260,37 +260,67 @@ def logout():
     flash("You have successfully logged out.", "success")
     return redirect(url_for('index'))
 
-@app.route('/google-login')
+@app.route('/google-login', methods=['GET', 'POST'])
 def google_login():
     """
     Simulates Google OAuth2 single-sign-on (SSO).
-    For educational and deployment demonstration, this logs you in instantly with a mock Google Profile.
+    On GET: Renders a mock Google Account Selector.
+    On POST: Authenticates/Registers the selected identity.
     """
-    mock_google_id = "google_sso_12345"
-    mock_email = "student.cse@gmail.com"
-    mock_name = "CSE Tourist"
+    role_hint = request.args.get('role_hint', 'tourist')
     
-    # Try finding the user
-    user = db_find_one('users', {'google_id': mock_google_id})
-    if not user:
-        # Create Google account
-        user_doc = {
-            'name': mock_name,
-            'email': mock_email,
-            'password_hash': generate_password_hash("google_sso_pass_secure"),
-            'google_id': mock_google_id,
-            'role': 'tourist',
-            'created_at': datetime.utcnow()
-        }
-        user = db_insert_one('users', user_doc)
+    if request.method == 'POST':
+        email = request.form.get('email')
+        name = request.form.get('name')
+        role = request.form.get('role', 'tourist')
         
-    session['user_id'] = str(user['_id'])
-    session['email'] = user['email']
-    session['role'] = user['role']
-    session['name'] = user['name']
-    
-    flash("Signed in successfully via Google Account!", "success")
-    return redirect(url_for('tourist_dashboard'))
+        # Try finding the user by email
+        user = db_find_one('users', {'email': email})
+        
+        if not user:
+            # Create Google account
+            google_id = f"google_{email.split('@')[0]}"
+            user_doc = {
+                'name': name,
+                'email': email,
+                'password_hash': generate_password_hash("google_sso_pass_secure"),
+                'google_id': google_id,
+                'role': role,
+                'created_at': datetime.utcnow()
+            }
+            user = db_insert_one('users', user_doc)
+            
+            # If user is a shop owner, set up their business details
+            if role == 'shop_owner':
+                shop_doc = {
+                    'owner_id': str(user['_id']),
+                    'name': f"{name}'s Shop",
+                    'email': email,
+                    'category': 'Restaurant',
+                    'address': '',
+                    'landmarks': '',
+                    'ways_to_reach': '',
+                    'latitude': 28.6139,  # Default center coordinates (Delhi)
+                    'longitude': 77.2090,
+                    'subscription_plan': 'basic',
+                    'fancy_description': '',
+                    'deals': []
+                }
+                db_insert_one('shops', shop_doc)
+        
+        session['user_id'] = str(user['_id'])
+        session['email'] = user['email']
+        session['role'] = user['role']
+        session['name'] = user['name']
+        
+        flash(f"Signed in successfully as {name} via Google!", "success")
+        
+        if user['role'] == 'tourist':
+            return redirect(url_for('tourist_dashboard'))
+        else:
+            return redirect(url_for('shop_dashboard'))
+            
+    return render_template('google_login.html', role_hint=role_hint)
 
 
 # ==========================================

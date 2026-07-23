@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <!-- Roboto Font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Container Card */
+        .signin-card {
+            width: 450px;
+            min-height: 500px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 40px;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+        }
+
+        @media (max-width: 450px) {
+            .signin-card {
+                width: 100%;
+                border: none;
+                padding: 20px;
+            }
+        }
+
+        /* Google Logo Colors */
+        .google-logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+        }
+        .google-logo span:nth-child(1) { color: #4285F4; } /* G */
+        .google-logo span:nth-child(2) { color: #EA4335; } /* o */
+        .google-logo span:nth-child(3) { color: #FBBC05; } /* o */
+        .google-logo span:nth-child(4) { color: #4285F4; } /* g */
+        .google-logo span:nth-child(5) { color: #34A853; } /* l */
+        .google-logo span:nth-child(6) { color: #EA4335; } /* e */
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #202124;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #202124;
+            line-height: 1.4;
+        }
+
+        .app-name {
+            color: #1a73e8;
+            font-weight: 500;
+        }
+
+        /* Account List */
+        .account-list {
+            margin-top: 10px;
+            border-bottom: 1px solid #dadce0;
+            margin-bottom: 20px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid #dadce0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .account-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            margin-right: 12px;
+            background-color: #1a73e8;
+        }
+
+        .account-info {
+            flex-grow: 1;
+        }
+
+        .account-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #3c4043;
+        }
+
+        .account-email {
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        /* Custom / Use another account section */
+        .use-another-btn {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            cursor: pointer;
+            color: #1a73e8;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .use-another-btn i {
+            margin-right: 16px;
+            font-size: 18px;
+            width: 32px;
+            text-align: center;
+        }
+
+        .use-another-btn:hover {
+            color: #1557b0;
+        }
+
+        /* Form styling when adding custom email */
+        .custom-account-form {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #1a73e8;
+            border-width: 2px;
+            padding: 15px; /* Adjust padding to keep height same with thicker border */
+        }
+
+        .form-label {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 0 4px;
+            color: #5f6368;
+            transition: 0.2s ease-all;
+            pointer-events: none;
+            font-size: 16px;
+        }
+
+        .form-input:focus ~ .form-label,
+        .form-input:not(:placeholder-shown) ~ .form-label {
+            top: 0;
+            font-size: 12px;
+            color: #1a73e8;
+        }
+
+        /* Role Hint select */
+        .role-select-container {
+            margin-top: 8px;
+        }
+        
+        .role-label {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .role-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            background-color: white;
+        }
+
+        .role-select:focus {
+            border-color: #1a73e8;
+        }
+
+        /* Footer buttons */
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .btn-link {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-link:hover {
+            color: #1557b0;
+        }
+
+        .btn-blue {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-blue:hover {
+            background-color: #1557b0;
+        }
+
+        /* General Footer (Language, Help, Terms) */
+        .signin-footer {
+            width: 450px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #757575;
+            padding: 0 10px;
+        }
+
+        @media (max-width: 450px) {
+            .signin-footer {
+                width: 100%;
+                padding: 0 20px;
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-links a {
+            color: #757575;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: #212121;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Google Box -->
+    <div class="signin-card">
+        <!-- Logo -->
+        <div class="google-logo">
+            <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+        </div>
+
+        <!-- Header -->
+        <div class="header" id="card-header">
+            <h1>Choose an account</h1>
+            <p>to continue to <span class="app-name">SafeTour</span></p>
+        </div>
+
+        <!-- Account List Page (Visible by default) -->
+        <div id="accounts-page">
+            <div class="account-list">
+                <!-- User 1: Krish Dubey -->
+                <div class="account-item" onclick="selectAccount('krishdubey027@gmail.com', 'Krish Dubey')">
+                    <div class="avatar" style="background-color: #d93025;">K</div>
+                    <div class="account-info">
+                        <div class="account-name">Krish Dubey</div>
+                        <div class="account-email">krishdubey027@gmail.com</div>
+                    </div>
+                </div>
+
+                <!-- User 2: Faculty Member -->
+                <div class="account-item" onclick="selectAccount('evaluation.cse@gmail.com', 'CSE Faculty')">
+                    <div class="avatar" style="background-color: #1e8e3e;">E</div>
+                    <div class="account-info">
+                        <div class="account-name">CSE Faculty</div>
+                        <div class="account-email">evaluation.cse@gmail.com</div>
+                    </div>
+                </div>
+
+                <!-- User 3: Demo Tourist -->
+                <div class="account-item" onclick="selectAccount('demo.tourist@gmail.com', 'Demo Tourist')">
+                    <div class="avatar" style="background-color: #1a73e8;">D</div>
+                    <div class="account-info">
+                        <div class="account-name">Demo Tourist</div>
+                        <div class="account-email">demo.tourist@gmail.com</div>
+                    </div>
+                </div>
+
+                <!-- User 4: Demo Shop Owner -->
+                <div class="account-item" onclick="selectAccount('demo.shop@gmail.com', 'Demo Shop Owner')">
+                    <div class="avatar" style="background-color: #f9ab00;">S</div>
+                    <div class="account-info">
+                        <div class="account-name">Demo Shop Owner</div>
+                        <div class="account-email">demo.shop@gmail.com</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Use Another Account Button -->
+            <div class="use-another-btn" onclick="showCustomForm()">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Use another account</span>
+            </div>
+        </div>
+
+        <!-- Custom Account Sign-In Form (Hidden by default) -->
+        <form action="{{ url_for('google_login') }}" method="POST" id="custom-form" class="custom-account-form">
+            <!-- Full Name -->
+            <div class="form-group">
+                <input type="text" id="name-input" name="name" required class="form-input" placeholder=" " autocomplete="off">
+                <label for="name-input" class="form-label">Full Name</label>
+            </div>
+
+            <!-- Email Address -->
+            <div class="form-group">
+                <input type="email" id="email-input" name="email" required class="form-input" placeholder=" " autocomplete="off">
+                <label for="email-input" class="form-label">Email or phone</label>
+            </div>
+
+            <!-- Role Selector (Since Google login can register tourists or shop owners) -->
+            <div class="role-select-container">
+                <label class="role-label" for="role-input">Register role for this account:</label>
+                <select name="role" id="role-input" class="role-select">
+                    <option value="tourist" {% if role_hint == 'tourist' %}selected{% endif %}>Tourist (Plan tour, explore safety & deals)</option>
+                    <option value="shop_owner" {% if role_hint == 'shop_owner' %}selected{% endif %}>Shop Owner (Promote restaurants & map coordinates)</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-link" onclick="hideCustomForm()">Back</button>
+                <button type="submit" class="btn-blue">Next</button>
+            </div>
+        </form>
+
+        <!-- Hidden submit form for existing accounts list -->
+        <form action="{{ url_for('google_login') }}" method="POST" id="hidden-login-form" style="display: none;">
+            <input type="hidden" name="email" id="hidden-email">
+            <input type="hidden" name="name" id="hidden-name">
+            <input type="hidden" name="role" id="hidden-role" value="{{ role_hint }}">
+        </form>
+    </div>
+
+    <!-- Bottom Footer -->
+    <div class="signin-footer">
+        <div>
+            <span>English (United States)</span>
+        </div>
+        <div class="footer-links">
+            <a href="#">Help</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+        </div>
+    </div>
+
+    <script>
+        const accountsPage = document.getElementById('accounts-page');
+        const customForm = document.getElementById('custom-form');
+        const cardHeader = document.getElementById('card-header');
+
+        function showCustomForm() {
+            accountsPage.style.display = 'none';
+            customForm.style.display = 'flex';
+            cardHeader.innerHTML = `
+                <h1>Sign in</h1>
+                <p>with your Google Account to continue to <span class="app-name">SafeTour</span></p>
+            `;
+        }
+
+        function hideCustomForm() {
+            customForm.style.display = 'none';
+            accountsPage.style.display = 'block';
+            cardHeader.innerHTML = `
+                <h1>Choose an account</h1>
+                <p>to continue to <span class="app-name">SafeTour</span></p>
+            `;
+        }
+
+        function selectAccount(email, name) {
+            // Set values and submit
+            document.getElementById('hidden-email').value = email;
+            document.getElementById('hidden-name').value = name;
+            
+            // Map specific account to its default role for easy grading
+            let role = "{{ role_hint or 'tourist' }}";
+            if (email === 'demo.shop@gmail.com') {
+                role = 'shop_owner';
+            } else if (email === 'krishdubey027@gmail.com' || email === 'evaluation.cse@gmail.com' || email === 'demo.tourist@gmail.com') {
+                role = 'tourist';
+            }
+            
+            document.getElementById('hidden-role').value = role;
+            document.getElementById('hidden-login-form').submit();
+        }
+    </script>
+</body>
+</html>

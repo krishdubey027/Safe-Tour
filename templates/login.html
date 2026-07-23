@@ -9,7 +9,7 @@
         <p class="auth-subtitle">Login to access your personalized SafeTour workspace</p>
         
         <!-- Google Quick Login (Compulsory) -->
-        <a href="{{ url_for('google_login') }}" class="btn-google">
+        <a href="{{ url_for('google_login', role_hint=role_hint) }}" class="btn-google">
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo" class="google-logo">
             <span>Continue with Google</span>
         </a>
