@@ -1,70 +1,1409 @@
 {% extends "base.html" %}
 {% set active_page = 'home' %}
 
-{% block title %}SafeTour - Plan Safely & Discover Smart Deals{% endblock %}
+{% block title %}SafeTour — Discover India. Plan Smarter. Travel Better.{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="SafeTour is India's premium travel platform. Explore 5000+ attractions, get live weather forecasts, discover local deals, and plan your perfect trip.">
+<style>
+/* ============================================================
+   HOMEPAGE — PREMIUM REDESIGN
+   All existing features preserved. Design only upgraded.
+   ============================================================ */
+
+/* ── HERO ────────────────────────────────────────────── */
+.hp-hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 24px;
+}
+
+/* Slideshow Background */
+.hero-slideshow {
+    position: absolute; inset: 0;
+    z-index: 0;
+}
+.hero-slide {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.8s ease;
+}
+.hero-slide.active { opacity: 1; }
+
+/* Gradient overlay — deep and atmospheric */
+.hero-overlay {
+    position: absolute; inset: 0; z-index: 1;
+    background:
+        linear-gradient(to bottom,
+            rgba(5,5,20,0.55) 0%,
+            rgba(5,5,20,0.35) 40%,
+            rgba(5,5,20,0.75) 80%,
+            rgba(5,5,20,0.95) 100%
+        );
+}
+
+/* Subtle noise texture for depth */
+.hero-overlay::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Slideshow dot nav */
+.hero-dots {
+    position: absolute; bottom: 40px; left: 50%;
+    transform: translateX(-50%); z-index: 10;
+    display: flex; gap: 8px;
+}
+.hero-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.35); cursor: pointer;
+    transition: all 0.4s ease;
+}
+.hero-dot.active { width: 24px; border-radius: 3px; background: #fff; }
+
+/* Hero content */
+.hp-hero-inner {
+    position: relative; z-index: 2;
+    text-align: center;
+    max-width: 780px;
+    width: 100%;
+    padding-top: 80px;
+}
+.hp-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(99,102,241,0.18);
+    border: 1px solid rgba(99,102,241,0.35);
+    backdrop-filter: blur(8px);
+    border-radius: 30px;
+    padding: 5px 14px;
+    color: #a5b4fc;
+    font-size: 0.78rem; font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+}
+.hp-eyebrow-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.hp-headline {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(2.4rem, 5.5vw, 4rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    margin-bottom: 18px;
+}
+.hp-headline .hl-accent {
+    background: linear-gradient(90deg, #818cf8, #a78bfa, #6ee7f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.hp-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.7;
+    margin-bottom: 44px;
+    max-width: 560px;
+    margin-left: auto; margin-right: auto;
+}
+
+/* ── FLOATING SEARCH PANEL ─────────────────────────── */
+.search-panel {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 24px;
+    padding: 20px 20px 20px;
+    box-shadow:
+        0 32px 80px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+/* Search row — destination + date + travelers inline */
+.search-fields-row {
+    display: grid;
+    grid-template-columns: 1fr 160px 120px;
+    gap: 2px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+@media (max-width: 640px) {
+    .search-fields-row { grid-template-columns: 1fr; }
+}
+
+.search-field {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px;
+    cursor: text; transition: background 0.2s;
+    position: relative;
+}
+.search-field:not(:last-child) {
+    border-right: 1px solid rgba(255,255,255,0.08);
+}
+.search-field:focus-within {
+    background: rgba(255,255,255,0.06);
+}
+.sf-icon {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.sf-inner { flex: 1; min-width: 0; }
+.sf-label {
+    font-size: 0.68rem; font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    display: block; margin-bottom: 1px;
+}
+.sf-input {
+    background: transparent; border: none; outline: none;
+    color: #fff; font-size: 0.93rem; font-weight: 500;
+    font-family: 'Inter', sans-serif; width: 100%;
+}
+.sf-input::placeholder { color: rgba(255,255,255,0.35); }
+.sf-input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.4);
+    cursor: pointer;
+}
+
+/* Interest pills row */
+.interest-row {
+    display: flex; gap: 7px; flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.interest-label {
+    font-size: 0.72rem; font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    align-self: center; white-space: nowrap;
+}
+.interest-pill {
+    padding: 5px 12px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.55);
+    font-size: 0.75rem; font-family: 'Inter', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+    background: transparent;
+    display: flex; align-items: center; gap: 5px;
+}
+.interest-pill:hover, .interest-pill.active {
+    background: rgba(99,102,241,0.3);
+    border-color: rgba(99,102,241,0.6);
+    color: #fff;
+}
+
+/* Search submit button */
+.search-submit-row {
+    display: flex; gap: 10px; align-items: center;
+}
+.voice-btn {
+    width: 48px; height: 48px; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s; flex-shrink: 0;
+}
+.voice-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.voice-btn.listening { background: rgba(239,68,68,0.25); color: #f87171; border-color: #f87171; animation: mic-pulse 1s infinite; }
+@keyframes mic-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+
+.hp-search-btn {
+    flex: 1; height: 48px; border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #06b6d4 100%);
+    color: #fff; border: none; font-size: 0.95rem; font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer; transition: all 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.4);
+    letter-spacing: 0.2px;
+}
+.hp-search-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 40px rgba(99,102,241,0.55);
+}
+.hp-search-btn i { font-size: 0.9rem; }
+
+/* Autocomplete dropdown */
+.autocomplete-drop {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: rgba(20,20,40,0.97);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; z-index: 500;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    display: none;
+}
+.autocomplete-drop.open { display: block; }
+.auto-section-label {
+    font-size: 0.7rem; font-weight: 700;
+    color: rgba(255,255,255,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    padding: 10px 14px 4px;
+}
+.auto-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 14px; cursor: pointer;
+    transition: background 0.15s;
+}
+.auto-item:hover { background: rgba(99,102,241,0.15); }
+.auto-item-img {
+    width: 36px; height: 36px; border-radius: 8px;
+    object-fit: cover; flex-shrink: 0;
+    background: rgba(255,255,255,0.06);
+}
+.auto-item-name {
+    font-size: 0.88rem; font-weight: 600; color: #fff;
+    font-family: 'Inter', sans-serif;
+}
+.auto-item-sub {
+    font-size: 0.73rem; color: rgba(255,255,255,0.4);
+    font-family: 'Inter', sans-serif;
+}
+.auto-item-badge {
+    margin-left: auto; font-size: 0.65rem; font-weight: 700;
+    padding: 2px 7px; border-radius: 6px;
+    background: rgba(99,102,241,0.25); color: #a5b4fc;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    text-transform: uppercase; white-space: nowrap;
+}
+
+/* Hero trust strip */
+.hero-trust {
+    display: flex; align-items: center; gap: 20px;
+    justify-content: center;
+    margin-top: 28px;
+    flex-wrap: wrap;
+}
+.trust-stat {
+    text-align: center;
+}
+.trust-stat .ts-num {
+    font-family: 'Manrope', sans-serif;
+    font-size: 1.3rem; font-weight: 800; color: #fff;
+    letter-spacing: -0.03em;
+}
+.trust-stat .ts-label {
+    font-size: 0.72rem; color: rgba(255,255,255,0.4);
+    font-family: 'Inter', sans-serif;
+}
+.trust-divider {
+    width: 1px; height: 32px;
+    background: rgba(255,255,255,0.1);
+}
+
+/* ── GATEWAY CARDS (Tourist / Shop Owner) ─────────── */
+.gateway-section {
+    max-width: 1280px; margin: 0 auto;
+    padding: 90px 32px 0;
+}
+.gateway-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+@media (max-width: 768px) { .gateway-grid { grid-template-columns: 1fr; } }
+
+.gw-card {
+    position: relative; overflow: hidden;
+    border-radius: 28px;
+    padding: 48px 40px;
+    min-height: 340px;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.gw-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+}
+.gw-card-tourist {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+}
+.gw-card-shop {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #064e3b 100%);
+}
+
+/* Decorative blobs inside cards */
+.gw-blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(60px); pointer-events: none; z-index: 0;
+}
+.gw-blob-1 { width: 300px; height: 300px; top: -80px; right: -80px; }
+.gw-card-tourist .gw-blob-1 { background: rgba(99,102,241,0.25); }
+.gw-card-shop .gw-blob-1 { background: rgba(16,185,129,0.2); }
+.gw-blob-2 { width: 200px; height: 200px; bottom: -60px; left: -40px; }
+.gw-card-tourist .gw-blob-2 { background: rgba(139,92,246,0.15); }
+.gw-card-shop .gw-blob-2 { background: rgba(5,150,105,0.15); }
+
+.gw-card-content { position: relative; z-index: 1; }
+.gw-icon-ring {
+    width: 60px; height: 60px; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin-bottom: 20px;
+}
+.gw-card-tourist .gw-icon-ring {
+    background: rgba(99,102,241,0.2);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: #a5b4fc;
+}
+.gw-card-shop .gw-icon-ring {
+    background: rgba(16,185,129,0.2);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #6ee7b7;
+}
+.gw-label {
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin-bottom: 8px;
+}
+.gw-card-tourist .gw-label { color: #818cf8; }
+.gw-card-shop .gw-label { color: #34d399; }
+
+.gw-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.9rem; font-weight: 800;
+    color: #fff; line-height: 1.2;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+}
+.gw-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; color: rgba(255,255,255,0.55);
+    line-height: 1.7; margin-bottom: 32px;
+    max-width: 360px;
+}
+
+/* Feature chips on gateway cards */
+.gw-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 28px; }
+.gw-chip {
+    padding: 5px 12px; border-radius: 20px; font-size: 0.74rem;
+    font-family: 'Inter', sans-serif; font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+}
+.gw-card-tourist .gw-chip { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+.gw-card-shop .gw-chip { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+
+/* Gateway CTAs */
+.gw-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 26px; border-radius: 14px;
+    font-size: 0.9rem; font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all 0.25s; cursor: pointer;
+    text-decoration: none; border: none;
+}
+.gw-card-tourist .gw-cta {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+}
+.gw-card-tourist .gw-cta:hover {
+    box-shadow: 0 12px 32px rgba(99,102,241,0.6);
+    transform: translateY(-2px);
+}
+.gw-card-shop .gw-cta {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+}
+.gw-card-shop .gw-cta:hover {
+    box-shadow: 0 12px 32px rgba(16,185,129,0.55);
+    transform: translateY(-2px);
+}
+
+/* Decorative number on the right side of card */
+.gw-bg-num {
+    position: absolute; right: -10px; bottom: -20px;
+    font-family: 'Manrope', sans-serif; font-size: 10rem;
+    font-weight: 900; z-index: 0; pointer-events: none;
+    line-height: 1; user-select: none;
+}
+.gw-card-tourist .gw-bg-num { color: rgba(99,102,241,0.07); }
+.gw-card-shop .gw-bg-num { color: rgba(16,185,129,0.07); }
+
+/* ── TRENDING DESTINATIONS SECTION ──────────────────── */
+.hp-section {
+    max-width: 1280px; margin: 0 auto;
+    padding: 80px 32px 0;
+}
+.hp-section-header {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; margin-bottom: 32px;
+}
+.hp-section-label {
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--primary); font-family: 'Plus Jakarta Sans', sans-serif;
+    margin-bottom: 6px;
+}
+.hp-section-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.85rem; font-weight: 800;
+    color: var(--color-text-main); line-height: 1.2;
+    letter-spacing: -0.03em;
+}
+.hp-see-all {
+    font-size: 0.85rem; font-weight: 600;
+    color: var(--primary); font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; gap: 5px;
+    text-decoration: none; transition: gap 0.2s;
+    white-space: nowrap; margin-bottom: 4px;
+}
+.hp-see-all:hover { gap: 9px; }
+
+/* Horizontal scroll row */
+.dest-scroll-row {
+    display: flex; gap: 18px;
+    overflow-x: auto; padding-bottom: 12px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.dest-scroll-row::-webkit-scrollbar { display: none; }
+
+/* Premium Destination Card */
+.dest-card {
+    flex-shrink: 0; width: 280px;
+    border-radius: 22px; overflow: hidden;
+    position: relative; cursor: pointer;
+    scroll-snap-align: start;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s;
+    border: 1px solid var(--border-glass);
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+}
+.dest-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+}
+.dest-card-img-wrap {
+    position: relative; height: 190px; overflow: hidden;
+}
+.dest-card-img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform 0.55s ease;
+}
+.dest-card:hover .dest-card-img { transform: scale(1.07); }
+
+.dest-card-badges {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+}
+.dest-badge {
+    padding: 3px 9px; border-radius: 8px;
+    font-size: 0.65rem; font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.3px; text-transform: uppercase;
+    backdrop-filter: blur(8px);
+}
+.badge-hot { background: rgba(239,68,68,0.85); color: #fff; }
+.badge-trending { background: rgba(245,158,11,0.85); color: #fff; }
+.badge-hidden { background: rgba(99,102,241,0.85); color: #fff; }
+.badge-family { background: rgba(16,185,129,0.85); color: #fff; }
+.badge-adventure { background: rgba(245,101,60,0.85); color: #fff; }
+.badge-beach { background: rgba(6,182,212,0.85); color: #fff; }
+.badge-free { background: rgba(34,197,94,0.9); color: #fff; }
+
+.dest-card-fav {
+    position: absolute; top: 12px; right: 12px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.8rem; cursor: pointer;
+    transition: all 0.25s;
+}
+.dest-card-fav:hover, .dest-card-fav.saved { background: #ef4444; border-color: #ef4444; }
+
+.dest-card-rating-pill {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 4px 9px;
+    display: flex; align-items: center; gap: 4px;
+    font-size: 0.75rem; font-weight: 700;
+    color: #fff; font-family: 'Manrope', sans-serif;
+}
+.dest-card-rating-pill i { color: #fbbf24; font-size: 0.65rem; }
+
+/* Card body */
+.dest-card-body { padding: 14px 16px 16px; }
+.dest-card-state {
+    font-size: 0.71rem; font-weight: 600;
+    color: var(--primary); font-family: 'Plus Jakarta Sans', sans-serif;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+}
+.dest-card-name {
+    font-family: 'Poppins', sans-serif; font-weight: 700;
+    font-size: 1.05rem; color: var(--color-text-main);
+    line-height: 1.25; margin-bottom: 6px;
+}
+.dest-card-meta {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.dest-card-budget {
+    font-family: 'Manrope', sans-serif; font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+.dest-card-budget strong { color: var(--color-text-main); font-size: 0.92rem; }
+.dest-card-spots {
+    font-size: 0.75rem; color: var(--color-text-muted);
+    display: flex; align-items: center; gap: 4px;
+    font-family: 'Inter', sans-serif;
+}
+.dest-card-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.dest-card-tag {
+    font-size: 0.68rem; padding: 3px 8px; border-radius: 6px;
+    background: rgba(99,102,241,0.08);
+    color: var(--primary); font-family: 'Inter', sans-serif; font-weight: 500;
+}
+
+/* ── FEATURES SECTION (preserved + redesigned) ──────── */
+.hp-why {
+    max-width: 1280px; margin: 0 auto;
+    padding: 90px 32px 0;
+}
+.features-grid-new {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-top: 40px;
+}
+@media (max-width: 900px) { .features-grid-new { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .features-grid-new { grid-template-columns: 1fr; } }
+
+.feature-card-new {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: 22px;
+    padding: 28px 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s, border-color 0.3s;
+    position: relative; overflow: hidden;
+}
+.feature-card-new:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(99,102,241,0.2);
+}
+.feature-card-new::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--purple));
+    border-radius: 3px 3px 0 0;
+}
+.fc-icon-wrap {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; margin-bottom: 16px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.15);
+    color: var(--primary);
+}
+.feature-card-new:nth-child(2) .fc-icon-wrap { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); color: #10b981; }
+.feature-card-new:nth-child(3) .fc-icon-wrap { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.15); color: #f59e0b; }
+.feature-card-new:nth-child(4) .fc-icon-wrap { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.15); color: #ef4444; }
+
+.feature-card-new h4 {
+    font-family: 'Poppins', sans-serif; font-size: 0.98rem; font-weight: 700;
+    color: var(--color-text-main); margin-bottom: 8px;
+}
+.feature-card-new p {
+    font-family: 'Inter', sans-serif; font-size: 0.82rem;
+    color: var(--color-text-muted); line-height: 1.65;
+}
+
+/* ── SOCIAL PROOF ROW ────────────────────────────────── */
+.social-proof {
+    max-width: 1280px; margin: 0 auto;
+    padding: 80px 32px 0;
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 16px;
+}
+@media (max-width: 768px) { .social-proof { grid-template-columns: repeat(2,1fr); } }
+
+.sp-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px; padding: 24px;
+    text-align: center;
+}
+.sp-num {
+    font-family: 'Manrope', sans-serif; font-size: 2rem;
+    font-weight: 900; color: var(--primary);
+    letter-spacing: -0.04em;
+}
+.sp-label {
+    font-family: 'Inter', sans-serif; font-size: 0.82rem;
+    color: var(--color-text-muted); margin-top: 4px;
+}
+
+/* ── BOTTOM CTA STRIP ────────────────────────────────── */
+.hp-cta-strip {
+    max-width: 1280px; margin: 80px auto 0;
+    padding: 0 32px 80px;
+}
+.hp-cta-inner {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0c1a35 100%);
+    border-radius: 32px;
+    padding: 60px 60px;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 32px; flex-wrap: wrap;
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(99,102,241,0.2);
+}
+.hp-cta-inner::before {
+    content: '';
+    position: absolute; top: -100px; right: -100px;
+    width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%);
+}
+.hp-cta-inner::after {
+    content: '';
+    position: absolute; bottom: -80px; left: -60px;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+}
+.hp-cta-text { position: relative; z-index: 1; }
+.hp-cta-title {
+    font-family: 'Poppins', sans-serif; font-size: 1.8rem;
+    font-weight: 800; color: #fff; line-height: 1.2;
+    letter-spacing: -0.03em; margin-bottom: 8px;
+}
+.hp-cta-sub {
+    font-family: 'Inter', sans-serif; font-size: 0.95rem;
+    color: rgba(255,255,255,0.55);
+}
+.hp-cta-actions {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    position: relative; z-index: 1;
+}
+.cta-btn-primary {
+    padding: 14px 28px; border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; font-weight: 700; font-size: 0.9rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    border: none; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+    transition: all 0.25s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.cta-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99,102,241,0.6); }
+.cta-btn-outline {
+    padding: 14px 28px; border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.8); font-weight: 700; font-size: 0.9rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: transparent; cursor: pointer;
+    transition: all 0.25s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.cta-btn-outline:hover { border-color: rgba(255,255,255,0.5); color: #fff; background: rgba(255,255,255,0.05); }
+
+/* ── ANIMATIONS ───────────────────────────────────── */
+.reveal-up {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.reveal-up.revealed { opacity: 1; transform: translateY(0); }
+
+/* Stagger children */
+.stagger-children > *:nth-child(1) { transition-delay: 0s; }
+.stagger-children > *:nth-child(2) { transition-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { transition-delay: 0.2s; }
+.stagger-children > *:nth-child(4) { transition-delay: 0.3s; }
+
+/* Navbar force dark on hero scroll */
+body.at-hero .navbar {
+    background: transparent !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+}
+body.at-hero .nav-item { color: rgba(255,255,255,0.75); }
+body.at-hero .nav-item:hover, body.at-hero .nav-item.active { color: #fff; }
+body.at-hero .nav-item::after { background: rgba(255,255,255,0.8); }
+body.at-hero .nav-logo { color: #fff; }
+body.at-hero .logo-icon { color: #a5b4fc; }
+body.at-hero .logo-highlight { color: #6ee7b7; }
+body.at-hero .btn-login { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2); }
+body.at-hero .user-badge { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.15); }
+body.at-hero .btn-logout { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.1); }
+body.at-hero .theme-toggle { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15); }
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="hero-section">
-    <div class="hero-content">
-        <h1 class="hero-title animate-fade">Travel Securely, <br>Support <span class="text-gradient">Local Businesses</span></h1>
-        <p class="hero-subtitle">Get real-time weather forecasts, regional safety updates, and access verified restaurant discounts tailored to your travel dates.</p>
-        
-        <div class="gateway-container">
-            <!-- Tourist Card -->
-            <div class="gateway-card tourist-card">
-                <div class="card-icon">
-                    <i class="fa-solid fa-compass-drafting"></i>
+
+<!-- ====================================================
+     HERO SECTION
+     ==================================================== -->
+<section class="hp-hero" id="hero">
+
+    <!-- Slideshow Background -->
+    <div class="hero-slideshow" id="heroSlideshow">
+        <div class="hero-slide active" style="background-image: url('https://source.unsplash.com/1920x1080/?Taj+Mahal+India+sunrise&sig=1')"></div>
+        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Kerala+backwaters+India&sig=2')"></div>
+        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Rajasthan+fort+India+desert&sig=3')"></div>
+        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Goa+beach+India+sunset&sig=4')"></div>
+        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Manali+mountains+snow+India&sig=5')"></div>
+    </div>
+    <div class="hero-overlay"></div>
+
+    <!-- Hero Content -->
+    <div class="hp-hero-inner">
+        <div class="hp-eyebrow">
+            <span class="hp-eyebrow-dot"></span>
+            India's Premium Travel Platform
+        </div>
+
+        <h1 class="hp-headline">
+            Discover Incredible Places.<br>
+            Plan <span class="hl-accent">Smarter.</span> Travel Better.
+        </h1>
+
+        <p class="hp-tagline">
+            Explore 5,000+ attractions across every Indian city with real-time weather, live news, verified local deals, and AI-powered itinerary planning.
+        </p>
+
+        <!-- ── FLOATING SEARCH PANEL ── -->
+        <form class="search-panel" id="heroSearchForm" onsubmit="submitHeroSearch(event)">
+
+            <div class="search-fields-row">
+                <!-- Destination -->
+                <div class="search-field" id="destFieldWrap">
+                    <i class="fa-solid fa-magnifying-glass sf-icon"></i>
+                    <div class="sf-inner">
+                        <span class="sf-label">Where to?</span>
+                        <input class="sf-input" type="text" id="heroDestInput"
+                               name="location" placeholder="City, destination…"
+                               autocomplete="off"
+                               oninput="handleDestInput(this.value)"
+                               onfocus="openAutocomplete()"
+                               onblur="setTimeout(closeAutocomplete, 200)">
+                    </div>
+                    <!-- Autocomplete dropdown -->
+                    <div class="autocomplete-drop" id="autoDrop">
+                        <div class="auto-section-label">🔥 Trending now</div>
+                        <!-- Populated by JS -->
+                        <div id="autoDropItems"></div>
+                    </div>
                 </div>
-                <h3>For Tourists</h3>
-                <p>Plan your itinerary, check date-specific weather forecasts, map out safe locations, and unlock active deals from nearby partner shops.</p>
+
+                <!-- Date -->
+                <div class="search-field">
+                    <i class="fa-regular fa-calendar sf-icon"></i>
+                    <div class="sf-inner">
+                        <span class="sf-label">Travel date</span>
+                        <input class="sf-input" type="date" id="heroDateInput"
+                               name="travel_date"
+                               min="{{ today_date }}">
+                    </div>
+                </div>
+
+                <!-- Travelers -->
+                <div class="search-field">
+                    <i class="fa-solid fa-users sf-icon"></i>
+                    <div class="sf-inner">
+                        <span class="sf-label">Travelers</span>
+                        <select class="sf-input" id="heroTravelers" name="travelers"
+                                style="cursor:pointer;">
+                            <option value="1">1 person</option>
+                            <option value="2" selected>2 people</option>
+                            <option value="3">3 people</option>
+                            <option value="4+">4+ people</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interests row -->
+            <div class="interest-row">
+                <span class="interest-label">I love:</span>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">🏛️ History</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">🌿 Nature</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">🏄 Adventure</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">🍜 Food</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">👨‍👩‍👧 Family</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">🛍️ Shopping</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">🙏 Spiritual</button>
+                <button type="button" class="interest-pill" onclick="toggleInterest(this)">📸 Photography</button>
+            </div>
+
+            <!-- Submit row -->
+            <div class="search-submit-row">
+                <button type="button" class="voice-btn" id="voiceBtn"
+                        title="Voice search" onclick="startVoiceSearch()">
+                    <i class="fa-solid fa-microphone" id="voiceIcon"></i>
+                </button>
+                <button type="submit" class="hp-search-btn" id="heroSearchBtn">
+                    <i class="fa-solid fa-compass"></i>
+                    Explore Destination
+                </button>
+            </div>
+        </form>
+
+        <!-- Trust stats -->
+        <div class="hero-trust">
+            <div class="trust-stat">
+                <div class="ts-num">5,000+</div>
+                <div class="ts-label">Attractions</div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-stat">
+                <div class="ts-num">500+</div>
+                <div class="ts-label">Cities covered</div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-stat">
+                <div class="ts-num">Live</div>
+                <div class="ts-label">Weather & News</div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-stat">
+                <div class="ts-num">100%</div>
+                <div class="ts-label">Free to use</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slideshow dots -->
+    <div class="hero-dots" id="heroDots">
+        <div class="hero-dot active" onclick="goToSlide(0)"></div>
+        <div class="hero-dot" onclick="goToSlide(1)"></div>
+        <div class="hero-dot" onclick="goToSlide(2)"></div>
+        <div class="hero-dot" onclick="goToSlide(3)"></div>
+        <div class="hero-dot" onclick="goToSlide(4)"></div>
+    </div>
+</section>
+
+
+<!-- ====================================================
+     GATEWAY CARDS (Tourist & Shop Owner)
+     Preserving all existing CTA functionality
+     ==================================================== -->
+<section class="gateway-section reveal-up">
+    <div class="gateway-grid">
+
+        <!-- Tourist Card -->
+        <div class="gw-card gw-card-tourist">
+            <div class="gw-blob gw-blob-1"></div>
+            <div class="gw-blob gw-blob-2"></div>
+            <div class="gw-bg-num">01</div>
+            <div class="gw-card-content">
+                <div class="gw-icon-ring"><i class="fa-solid fa-compass-drafting"></i></div>
+                <div class="gw-label">For Travelers</div>
+                <h2 class="gw-title">Plan Your Perfect<br>Indian Adventure</h2>
+                <p class="gw-desc">Explore attractions, get date-specific weather, discover local deals, and plan safe itineraries with AI assistance.</p>
+                <div class="gw-chips">
+                    <span class="gw-chip"><i class="fa-solid fa-map-pin"></i> 5,000+ attractions</span>
+                    <span class="gw-chip"><i class="fa-solid fa-cloud-sun"></i> Live weather</span>
+                    <span class="gw-chip"><i class="fa-solid fa-robot"></i> AI planner</span>
+                    <span class="gw-chip"><i class="fa-solid fa-tags"></i> Local deals</span>
+                </div>
                 {% if session.get('role') == 'tourist' %}
-                    <a href="{{ url_for('tourist_dashboard') }}" class="btn-primary">Go to Tourist Hub <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="{{ url_for('tourist_dashboard') }}" class="gw-cta">
+                        Open Tourist Hub <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 {% else %}
-                    <a href="{{ url_for('login', role_hint='tourist') }}" class="btn-primary">Explore as Tourist <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="{{ url_for('login', role_hint='tourist') }}" class="gw-cta">
+                        Start Exploring <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 {% endif %}
             </div>
+        </div>
 
-            <!-- Shop Owner Card -->
-            <div class="gateway-card shop-card">
-                <div class="card-icon">
-                    <i class="fa-solid fa-store"></i>
+        <!-- Shop Owner Card -->
+        <div class="gw-card gw-card-shop">
+            <div class="gw-blob gw-blob-1"></div>
+            <div class="gw-blob gw-blob-2"></div>
+            <div class="gw-bg-num">02</div>
+            <div class="gw-card-content">
+                <div class="gw-icon-ring"><i class="fa-solid fa-store"></i></div>
+                <div class="gw-label">For Businesses</div>
+                <h2 class="gw-title">Grow Your Business<br>With Tourist Traffic</h2>
+                <p class="gw-desc">List your shop, offer exclusive deals, add directions and landmarks, and reach thousands of travelers searching near you.</p>
+                <div class="gw-chips">
+                    <span class="gw-chip"><i class="fa-solid fa-bullhorn"></i> Promote to tourists</span>
+                    <span class="gw-chip"><i class="fa-solid fa-location-dot"></i> Map listing</span>
+                    <span class="gw-chip"><i class="fa-solid fa-ticket"></i> Offer coupons</span>
+                    <span class="gw-chip"><i class="fa-solid fa-chart-line"></i> Analytics</span>
                 </div>
-                <h3>For Shop Owners</h3>
-                <p>Register your store/restaurant, list detailed landmarks & directions, offer exclusive tourist coupons, and boost sales with premium promotion plans.</p>
                 {% if session.get('role') == 'shop_owner' %}
-                    <a href="{{ url_for('shop_dashboard') }}" class="btn-secondary">Go to Shop Dashboard <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="{{ url_for('shop_dashboard') }}" class="gw-cta">
+                        Open Shop Dashboard <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 {% else %}
-                    <a href="{{ url_for('login', role_hint='shop_owner') }}" class="btn-secondary">Register Business <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="{{ url_for('login', role_hint='shop_owner') }}" class="gw-cta">
+                        Register Business <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 {% endif %}
             </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ====================================================
+     TRENDING DESTINATIONS
+     ==================================================== -->
+<section class="hp-section reveal-up">
+    <div class="hp-section-header">
+        <div>
+            <div class="hp-section-label">🔥 Most popular</div>
+            <h2 class="hp-section-title">Trending Destinations</h2>
+        </div>
+        <a href="{{ url_for('tourist_dashboard') }}" class="hp-see-all">
+            View all <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;"></i>
+        </a>
+    </div>
+
+    <div class="dest-scroll-row stagger-children" id="trendingRow">
+        {% set trending = [
+            {'name': 'New Delhi', 'state': 'Delhi', 'budget': '₹800', 'spots': 25, 'rating': 4.7, 'season': 'Oct–Mar', 'tags': ['History', 'Food', 'Heritage'], 'badges': ['hot'], 'key': 'Delhi', 'img': 'India+Gate+Delhi+night'},
+            {'name': 'Goa', 'state': 'Goa', 'budget': '₹1,200', 'spots': 15, 'rating': 4.8, 'season': 'Nov–Feb', 'tags': ['Beach', 'Party', 'Relax'], 'badges': ['trending'], 'key': 'Goa', 'img': 'Goa+beach+sunset'},
+            {'name': 'Jaipur', 'state': 'Rajasthan', 'budget': '₹900', 'spots': 15, 'rating': 4.6, 'season': 'Oct–Mar', 'tags': ['Heritage', 'Royal', 'Food'], 'badges': ['trending'], 'key': 'Jaipur', 'img': 'Jaipur+Hawa+Mahal+Rajasthan'},
+            {'name': 'Agra', 'state': 'Uttar Pradesh', 'budget': '₹700', 'spots': 10, 'rating': 4.7, 'season': 'Oct–Mar', 'tags': ['Heritage', 'Mughal', 'Photography'], 'badges': ['hot'], 'key': 'Agra', 'img': 'Taj+Mahal+sunrise+Agra'},
+            {'name': 'Manali', 'state': 'Himachal Pradesh', 'budget': '₹1,100', 'spots': 10, 'rating': 4.6, 'season': 'Dec–Feb', 'tags': ['Snow', 'Adventure', 'Scenic'], 'badges': ['adventure'], 'key': 'Manali', 'img': 'Manali+snow+mountains+Himachal'},
+            {'name': 'Varanasi', 'state': 'Uttar Pradesh', 'budget': '₹600', 'spots': 10, 'rating': 4.5, 'season': 'Oct–Mar', 'tags': ['Spiritual', 'Ganga', 'Culture'], 'badges': ['hidden'], 'key': 'Varanasi', 'img': 'Varanasi+Ganga+Aarti+ghats'},
+            {'name': 'Kochi', 'state': 'Kerala', 'budget': '₹900', 'spots': 8, 'rating': 4.5, 'season': 'Sep–Mar', 'tags': ['Culture', 'Backwaters', 'Food'], 'badges': ['family'], 'key': 'Kochi', 'img': 'Kochi+Fort+Kerala+backwaters'},
+            {'name': 'Darjeeling', 'state': 'West Bengal', 'budget': '₹800', 'spots': 6, 'rating': 4.4, 'season': 'Mar–May', 'tags': ['Tea', 'Mountains', 'Scenic'], 'badges': ['hidden'], 'key': 'Darjeeling', 'img': 'Darjeeling+tea+garden+mountains'},
+        ] %}
+        {% for dest in trending %}
+        <a class="dest-card" href="{{ url_for('tourist_dashboard') }}?location={{ dest.key }}" style="text-decoration:none;">
+            <div class="dest-card-img-wrap">
+                <img class="dest-card-img"
+                     src="https://source.unsplash.com/600x400/?{{ dest.img | urlencode }}"
+                     alt="{{ dest.name }}" loading="lazy"
+                     onerror="this.src='https://source.unsplash.com/600x400/?India+travel+tourism&sig={{ loop.index }}'">
+
+                <!-- Badges -->
+                <div class="dest-card-badges">
+                    {% for b in dest.badges %}
+                    <span class="dest-badge badge-{{ b }}">
+                        {% if b == 'hot' %}🔥 Hot{% elif b == 'trending' %}📈 Trending{% elif b == 'hidden' %}💎 Hidden Gem{% elif b == 'family' %}👨‍👩‍👧 Family{% elif b == 'adventure' %}⛰️ Adventure{% elif b == 'beach' %}🏖️ Beach{% endif %}
+                    </span>
+                    {% endfor %}
+                </div>
+
+                <!-- Favorite button -->
+                <button class="dest-card-fav" onclick="event.preventDefault(); toggleFav(this, '{{ dest.key }}')" title="Save">
+                    <i class="fa-regular fa-heart"></i>
+                </button>
+
+                <!-- Rating pill -->
+                <div class="dest-card-rating-pill">
+                    <i class="fa-solid fa-star"></i> {{ dest.rating }}
+                </div>
+            </div>
+
+            <div class="dest-card-body">
+                <div class="dest-card-state">{{ dest.state }}</div>
+                <div class="dest-card-name">{{ dest.name }}</div>
+                <div class="dest-card-meta">
+                    <div class="dest-card-budget">From <strong>{{ dest.budget }}</strong>/day</div>
+                    <div class="dest-card-spots"><i class="fa-solid fa-map-pin" style="color:var(--primary);"></i> {{ dest.spots }}+ spots</div>
+                </div>
+                <div class="dest-card-tags">
+                    {% for tag in dest.tags %}
+                    <span class="dest-card-tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- ====================================================
+     WEEKEND GETAWAYS
+     ==================================================== -->
+<section class="hp-section reveal-up" style="padding-top: 50px;">
+    <div class="hp-section-header">
+        <div>
+            <div class="hp-section-label">🌙 Quick escapes</div>
+            <h2 class="hp-section-title">Weekend Getaways</h2>
+        </div>
+        <a href="{{ url_for('tourist_dashboard') }}" class="hp-see-all">View all <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;"></i></a>
+    </div>
+    <div class="dest-scroll-row">
+        {% set weekend = [
+            {'name': 'Rishikesh', 'state': 'Uttarakhand', 'budget': '₹700', 'spots': 7, 'rating': 4.6, 'tags': ['Adventure', 'Yoga', 'Rafting'], 'badges': ['adventure'], 'key': 'Rishikesh', 'img': 'Rishikesh+Laxman+Jhula+river'},
+            {'name': 'Mysore', 'state': 'Karnataka', 'budget': '₹600', 'spots': 6, 'rating': 4.5, 'tags': ['Palace', 'Heritage', 'Gardens'], 'badges': ['family'], 'key': 'Mysore', 'img': 'Mysore+Palace+Karnataka+illuminated'},
+            {'name': 'Pushkar', 'state': 'Rajasthan', 'budget': '₹500', 'spots': 5, 'rating': 4.3, 'tags': ['Spiritual', 'Camel', 'Desert'], 'badges': ['hidden'], 'key': 'Pushkar', 'img': 'Pushkar+lake+temple+Rajasthan'},
+            {'name': 'Coorg', 'state': 'Karnataka', 'budget': '₹1,000', 'spots': 5, 'rating': 4.5, 'tags': ['Coffee', 'Waterfalls', 'Nature'], 'badges': ['hidden'], 'key': 'Coorg', 'img': 'Coorg+coffee+estate+Karnataka'},
+            {'name': 'Udaipur', 'state': 'Rajasthan', 'budget': '₹1,100', 'spots': 8, 'rating': 4.7, 'tags': ['Lake', 'Royal', 'Romance'], 'badges': ['trending'], 'key': 'Udaipur', 'img': 'Udaipur+City+Palace+lake+Rajasthan'},
+            {'name': 'Hampi', 'state': 'Karnataka', 'budget': '₹500', 'spots': 7, 'rating': 4.5, 'tags': ['Ruins', 'UNESCO', 'History'], 'badges': ['hidden'], 'key': 'Hampi', 'img': 'Hampi+ruins+boulders+Karnataka'},
+        ] %}
+        {% for dest in weekend %}
+        <a class="dest-card" href="{{ url_for('tourist_dashboard') }}?location={{ dest.key }}" style="text-decoration:none;">
+            <div class="dest-card-img-wrap">
+                <img class="dest-card-img"
+                     src="https://source.unsplash.com/600x400/?{{ dest.img | urlencode }}"
+                     alt="{{ dest.name }}" loading="lazy"
+                     onerror="this.src='https://source.unsplash.com/600x400/?India+travel&sig={{ loop.index + 20 }}'">
+                <div class="dest-card-badges">
+                    {% for b in dest.badges %}<span class="dest-badge badge-{{ b }}">{% if b == 'hot' %}🔥 Hot{% elif b == 'trending' %}📈 Trending{% elif b == 'hidden' %}💎 Hidden Gem{% elif b == 'family' %}👨‍👩‍👧 Family{% elif b == 'adventure' %}⛰️ Adventure{% endif %}</span>{% endfor %}
+                </div>
+                <button class="dest-card-fav" onclick="event.preventDefault(); toggleFav(this,'{{ dest.key }}')" title="Save"><i class="fa-regular fa-heart"></i></button>
+                <div class="dest-card-rating-pill"><i class="fa-solid fa-star"></i> {{ dest.rating }}</div>
+            </div>
+            <div class="dest-card-body">
+                <div class="dest-card-state">{{ dest.state }}</div>
+                <div class="dest-card-name">{{ dest.name }}</div>
+                <div class="dest-card-meta">
+                    <div class="dest-card-budget">From <strong>{{ dest.budget }}</strong>/day</div>
+                    <div class="dest-card-spots"><i class="fa-solid fa-map-pin" style="color:var(--primary);"></i> {{ dest.spots }}+ spots</div>
+                </div>
+                <div class="dest-card-tags">{% for tag in dest.tags %}<span class="dest-card-tag">{{ tag }}</span>{% endfor %}</div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- ====================================================
+     WHY SAFETOUR (Features — preserved + redesigned)
+     ==================================================== -->
+<section class="hp-why reveal-up">
+    <div style="text-align:center;">
+        <div class="hp-section-label" style="display:inline-block;">✨ Why SafeTour</div>
+        <h2 class="hp-section-title" style="margin-top:6px;">Everything you need to travel smart</h2>
+    </div>
+    <div class="features-grid-new stagger-children">
+        <div class="feature-card-new reveal-up">
+            <div class="fc-icon-wrap"><i class="fa-solid fa-cloud-sun"></i></div>
+            <h4>Date-Specific Weather</h4>
+            <p>Input your exact travel dates and get accurate forecasts — not just today's weather. Plan what to pack before you leave.</p>
+        </div>
+        <div class="feature-card-new reveal-up">
+            <div class="fc-icon-wrap"><i class="fa-solid fa-route"></i></div>
+            <h4>Landmarks & Directions</h4>
+            <p>Precise ways-to-reach guides and nearby landmarks written by local shop owners so you never get lost.</p>
+        </div>
+        <div class="feature-card-new reveal-up">
+            <div class="fc-icon-wrap"><i class="fa-solid fa-tags"></i></div>
+            <h4>Exclusive Verified Deals</h4>
+            <p>Access real discount coupons from certified partner restaurants and shops in the area. Save while you travel.</p>
+        </div>
+        <div class="feature-card-new reveal-up">
+            <div class="fc-icon-wrap"><i class="fa-solid fa-robot"></i></div>
+            <h4>AI Travel Assistant</h4>
+            <p>Get personalized itinerary recommendations, packing lists, and local tips powered by our smart AI assistant.</p>
         </div>
     </div>
 </section>
 
-<!-- Features Highlights section -->
-<section class="info-section">
-    <h2 class="section-title">Why Choose SafeTour?</h2>
-    <div class="features-grid">
-        <div class="feature-box">
-            <i class="fa-solid fa-cloud-sun"></i>
-            <h4>Date-Specific Weather</h4>
-            <p>Don't just check today's weather. Input your exact travel dates and see forecasts to plan what to pack and when to go.</p>
+
+<!-- ====================================================
+     SOCIAL PROOF (Stats)
+     ==================================================== -->
+<div class="social-proof reveal-up">
+    <div class="sp-card">
+        <div class="sp-num">5,000+</div>
+        <div class="sp-label">Attractions listed</div>
+    </div>
+    <div class="sp-card">
+        <div class="sp-num">500+</div>
+        <div class="sp-label">Cities & towns</div>
+    </div>
+    <div class="sp-card">
+        <div class="sp-num">100%</div>
+        <div class="sp-label">Free for travelers</div>
+    </div>
+    <div class="sp-card">
+        <div class="sp-num">Live</div>
+        <div class="sp-label">Weather & news feeds</div>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     BOTTOM CTA STRIP
+     ==================================================== -->
+<div class="hp-cta-strip reveal-up">
+    <div class="hp-cta-inner">
+        <div class="hp-cta-text">
+            <h2 class="hp-cta-title">Ready to explore India?</h2>
+            <p class="hp-cta-sub">Join thousands of travelers planning smarter trips with SafeTour.</p>
         </div>
-        <div class="feature-box">
-            <i class="fa-solid fa-route"></i>
-            <h4>Landmarks & Directions</h4>
-            <p>Get precise ways-to-reach guides and nearby landmarks written directly by local shop owners to never get lost.</p>
-        </div>
-        <div class="feature-box">
-            <i class="fa-solid fa-tags"></i>
-            <h4>Exclusive Verified Deals</h4>
-            <p>Save money by accessing discount coupons from certified partner restaurants in the area.</p>
-        </div>
-        <div class="feature-box">
-            <i class="fa-solid fa-bullhorn"></i>
-            <h4>Flexible Promotion Plans</h4>
-            <p>Shop owners can choose a ₹100 basic directory listing or a ₹150 plan to stand out and reach more tourists.</p>
+        <div class="hp-cta-actions">
+            {% if session.get('role') == 'tourist' %}
+            <a href="{{ url_for('tourist_dashboard') }}" class="cta-btn-primary">
+                <i class="fa-solid fa-compass"></i> Open My Hub
+            </a>
+            {% else %}
+            <a href="{{ url_for('login', role_hint='tourist') }}" class="cta-btn-primary">
+                <i class="fa-solid fa-compass"></i> Start Exploring
+            </a>
+            {% endif %}
+            <a href="{{ url_for('login', role_hint='shop_owner') }}" class="cta-btn-outline">
+                <i class="fa-solid fa-store"></i> Register Business
+            </a>
         </div>
     </div>
-</section>
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+// ======================================================
+// HERO SLIDESHOW
+// ======================================================
+const slides = document.querySelectorAll('.hero-slide');
+const dots = document.querySelectorAll('.hero-dot');
+let currentSlide = 0;
+let slideshowTimer;
+
+function goToSlide(idx) {
+    slides[currentSlide].classList.remove('active');
+    dots[currentSlide].classList.remove('active');
+    currentSlide = idx;
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
+}
+
+function nextSlide() {
+    goToSlide((currentSlide + 1) % slides.length);
+}
+
+slideshowTimer = setInterval(nextSlide, 5000);
+document.getElementById('heroSlideshow').addEventListener('mouseenter', () => clearInterval(slideshowTimer));
+document.getElementById('heroSlideshow').addEventListener('mouseleave', () => { slideshowTimer = setInterval(nextSlide, 5000); });
+
+// ======================================================
+// NAVBAR TRANSPARENCY ON HERO
+// ======================================================
+const hero = document.getElementById('hero');
+const body = document.body;
+
+function updateNavStyle() {
+    const heroBottom = hero.getBoundingClientRect().bottom;
+    body.classList.toggle('at-hero', heroBottom > 80);
+}
+window.addEventListener('scroll', updateNavStyle, { passive: true });
+updateNavStyle();
+
+// ======================================================
+// AUTOCOMPLETE DESTINATIONS
+// ======================================================
+const CITIES = [
+    { name: 'New Delhi', state: 'Delhi', key: 'Delhi', badge: '🔥 Hot', img: 'India+Gate+Delhi' },
+    { name: 'Mumbai', state: 'Maharashtra', key: 'Mumbai', badge: '📈 Trending', img: 'Gateway+Mumbai+India' },
+    { name: 'Goa', state: 'Goa', key: 'Goa', badge: '🏖️ Beach', img: 'Goa+beach+India' },
+    { name: 'Jaipur', state: 'Rajasthan', key: 'Jaipur', badge: '🏰 Royal', img: 'Jaipur+fort+Rajasthan' },
+    { name: 'Agra', state: 'Uttar Pradesh', key: 'Agra', badge: '🏛️ Heritage', img: 'Taj+Mahal+Agra' },
+    { name: 'Varanasi', state: 'Uttar Pradesh', key: 'Varanasi', badge: '🙏 Spiritual', img: 'Varanasi+Ganga+ghats' },
+    { name: 'Manali', state: 'Himachal Pradesh', key: 'Manali', badge: '⛰️ Adventure', img: 'Manali+snow+mountains' },
+    { name: 'Kochi', state: 'Kerala', key: 'Kochi', badge: '🌴 Coastal', img: 'Kochi+Kerala+backwaters' },
+    { name: 'Kolkata', state: 'West Bengal', key: 'Kolkata', badge: '🎭 Culture', img: 'Kolkata+Victoria+Memorial' },
+    { name: 'Hyderabad', state: 'Telangana', key: 'Hyderabad', badge: '👑 Historic', img: 'Hyderabad+Charminar' },
+    { name: 'Chennai', state: 'Tamil Nadu', key: 'Chennai', badge: '🌊 Coastal', img: 'Chennai+Marina+Beach' },
+    { name: 'Bangalore', state: 'Karnataka', key: 'Bangalore', badge: '🌸 Garden City', img: 'Bangalore+Lalbagh+garden' },
+    { name: 'Rishikesh', state: 'Uttarakhand', key: 'Rishikesh', badge: '🧘 Yoga', img: 'Rishikesh+Laxman+Jhula' },
+    { name: 'Darjeeling', state: 'West Bengal', key: 'Darjeeling', badge: '☕ Tea', img: 'Darjeeling+tea+mountains' },
+    { name: 'Mysore', state: 'Karnataka', key: 'Mysore', badge: '🏰 Palace', img: 'Mysore+Palace+Karnataka' },
+    { name: 'Udaipur', state: 'Rajasthan', key: 'Udaipur', badge: '💎 Luxury', img: 'Udaipur+City+Palace+lake' },
+    { name: 'Amritsar', state: 'Punjab', key: 'Amritsar', badge: '🙏 Spiritual', img: 'Amritsar+Golden+Temple' },
+    { name: 'Leh', state: 'Ladakh', key: 'Leh', badge: '⛰️ Extreme', img: 'Leh+Ladakh+mountains+India' },
+    { name: 'Ooty', state: 'Tamil Nadu', key: 'Ooty', badge: '🌿 Hill Station', img: 'Ooty+tea+garden+Nilgiris' },
+    { name: 'Shimla', state: 'Himachal Pradesh', key: 'Shimla', badge: '❄️ Hill Station', img: 'Shimla+mountains+snow' },
+];
+
+const dropEl = document.getElementById('autoDrop');
+const dropItems = document.getElementById('autoDropItems');
+const destInput = document.getElementById('heroDestInput');
+
+function openAutocomplete() {
+    renderAutocomplete('');
+    dropEl.classList.add('open');
+}
+function closeAutocomplete() {
+    dropEl.classList.remove('open');
+}
+
+function renderAutocomplete(query) {
+    const q = query.toLowerCase().trim();
+    const filtered = q
+        ? CITIES.filter(c => c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
+        : CITIES.slice(0, 8);
+
+    // Recently searched from localStorage
+    const recent = JSON.parse(localStorage.getItem('safetour-recent') || '[]');
+
+    let html = '';
+    if (!q && recent.length) {
+        html += '<div class="auto-section-label">🕒 Recently searched</div>';
+        recent.slice(0,3).forEach(r => {
+            html += `<div class="auto-item" onclick="selectCity('${r}')">
+                <img class="auto-item-img" src="https://source.unsplash.com/80x80/?${encodeURIComponent(r+'+India')}&sig=r_${r}" loading="lazy">
+                <div><div class="auto-item-name">${r}</div><div class="auto-item-sub">Recent</div></div>
+            </div>`;
+        });
+        html += '<div class="auto-section-label">🔥 Trending now</div>';
+    }
+    filtered.forEach(c => {
+        html += `<div class="auto-item" onclick="selectCity('${c.key}')">
+            <img class="auto-item-img" src="https://source.unsplash.com/80x80/?${encodeURIComponent(c.img)}&sig=ac_${c.key}" loading="lazy">
+            <div>
+                <div class="auto-item-name">${c.name}</div>
+                <div class="auto-item-sub">${c.state}</div>
+            </div>
+            <span class="auto-item-badge">${c.badge}</span>
+        </div>`;
+    });
+    if (!html) html = '<div style="padding:16px 14px; color:rgba(255,255,255,0.4); font-size:0.85rem;">No cities found. Try a different name!</div>';
+    dropItems.innerHTML = html;
+}
+
+function handleDestInput(val) {
+    renderAutocomplete(val);
+    if (!dropEl.classList.contains('open')) dropEl.classList.add('open');
+}
+
+function selectCity(key) {
+    destInput.value = key;
+    closeAutocomplete();
+    // Save to recent
+    let recent = JSON.parse(localStorage.getItem('safetour-recent') || '[]');
+    recent = [key, ...recent.filter(r => r !== key)].slice(0, 5);
+    localStorage.setItem('safetour-recent', JSON.stringify(recent));
+}
+
+// ======================================================
+// HERO FORM SUBMIT
+// ======================================================
+function submitHeroSearch(e) {
+    e.preventDefault();
+    const dest = destInput.value.trim();
+    const date = document.getElementById('heroDateInput').value;
+    if (!dest) {
+        destInput.focus();
+        destInput.style.outline = '2px solid #ef4444';
+        setTimeout(() => destInput.style.outline = '', 1500);
+        return;
+    }
+    // Save recent
+    let recent = JSON.parse(localStorage.getItem('safetour-recent') || '[]');
+    recent = [dest, ...recent.filter(r => r !== dest)].slice(0, 5);
+    localStorage.setItem('safetour-recent', JSON.stringify(recent));
+
+    // Navigate to tourist dashboard which redirects to city guide
+    let url = `/tourist-dashboard?location=${encodeURIComponent(dest)}`;
+    if (date) url += `&travel_date=${date}`;
+    window.location.href = url;
+}
+
+// ======================================================
+// VOICE SEARCH
+// ======================================================
+function startVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Voice search is not supported in your browser. Please use Chrome.');
+        return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    const btn = document.getElementById('voiceBtn');
+    const icon = document.getElementById('voiceIcon');
+    btn.classList.add('listening');
+    icon.className = 'fa-solid fa-circle-stop';
+
+    recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        destInput.value = transcript;
+        renderAutocomplete(transcript);
+        btn.classList.remove('listening');
+        icon.className = 'fa-solid fa-microphone';
+    };
+    recognition.onerror = recognition.onend = () => {
+        btn.classList.remove('listening');
+        icon.className = 'fa-solid fa-microphone';
+    };
+    recognition.start();
+}
+
+// ======================================================
+// INTERESTS TOGGLE
+// ======================================================
+function toggleInterest(btn) { btn.classList.toggle('active'); }
+
+// ======================================================
+// WISHLIST (Destination fav)
+// ======================================================
+function toggleFav(btn, key) {
+    let favs = JSON.parse(localStorage.getItem('safetour-favs') || '[]');
+    const idx = favs.indexOf(key);
+    if (idx >= 0) { favs.splice(idx,1); btn.classList.remove('saved'); btn.innerHTML = '<i class="fa-regular fa-heart"></i>'; }
+    else { favs.push(key); btn.classList.add('saved'); btn.innerHTML = '<i class="fa-solid fa-heart"></i>'; }
+    localStorage.setItem('safetour-favs', JSON.stringify(favs));
+}
+
+// Restore fav state on load
+document.querySelectorAll('.dest-card-fav').forEach(btn => {
+    const key = btn.getAttribute('onclick').match(/'([^']+)'\)/)?.[1];
+    const favs = JSON.parse(localStorage.getItem('safetour-favs') || '[]');
+    if (key && favs.includes(key)) { btn.classList.add('saved'); btn.innerHTML = '<i class="fa-solid fa-heart"></i>'; }
+});
+
+// ======================================================
+// SCROLL REVEAL
+// ======================================================
+const revealEls = document.querySelectorAll('.reveal-up');
+const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); } });
+}, { threshold: 0.1 });
+revealEls.forEach(el => revealObs.observe(el));
+
+// Set min date on date picker
+document.getElementById('heroDateInput').min = new Date().toISOString().split('T')[0];
+</script>
 {% endblock %}

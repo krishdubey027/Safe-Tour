@@ -270,7 +270,10 @@ def db_update_one(collection, query, new_values):
 # ==========================================
 @app.route('/')
 def index():
-    return render_template('index.html')
+    from datetime import date
+    return render_template('index.html', today_date=date.today().isoformat())
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

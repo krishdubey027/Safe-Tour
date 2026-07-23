@@ -42,10 +42,18 @@
                 {% if session.get('user_id') %}
                     {% if session.get('role') == 'tourist' %}
                         <a href="{{ url_for('tourist_dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">Explore</a>
+                        <a href="{{ url_for('tourist_dashboard') }}" class="nav-item">Destinations</a>
                     {% else %}
                         <a href="{{ url_for('shop_dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">Shop Dashboard</a>
                     {% endif %}
+                {% else %}
+                    <a href="{{ url_for('login', role_hint='tourist') }}" class="nav-item">Explore</a>
+                    <a href="{{ url_for('login', role_hint='tourist') }}" class="nav-item">Destinations</a>
+                {% endif %}
 
+                <a href="{{ url_for('index') }}#features" class="nav-item">About</a>
+
+                {% if session.get('user_id') %}
                     <div class="user-badge">
                         <i class="fa-solid {% if session.get('role') == 'tourist' %}fa-user-astronaut{% else %}fa-store{% endif %}"></i>
                         <span>{{ session.get('name', 'User') }}</span>
@@ -62,6 +70,7 @@
             </nav>
         </div>
     </header>
+
 
     <main class="main-content">
         <!-- Flash Messages -->
