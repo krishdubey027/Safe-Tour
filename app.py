@@ -103,6 +103,99 @@ def seed_mock_data():
             ]
         })
 
+# ==========================================
+# Real Weather & News Integration Helpers
+# ==========================================
+def get_live_weather(lat, lon, travel_date):
+    """
+    Fetches real-time weather from Open-Meteo API.
+    Only called if travel_date is within a 14-day window.
+    """
+    try:
+        dt_obj = datetime.strptime(travel_date, '%Y-%m-%d')
+        today = datetime.utcnow().date()
+        days_diff = (dt_obj.date() - today).days
+        
+        # Open-Meteo offers up to 16 days of daily forecast
+        if 0 <= days_diff <= 14:
+            url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&forecast_days=16&timezone=auto"
+            response = requests.get(url, timeout=3).json()
+            
+            daily = response.get('daily', {})
+            dates = daily.get('time', [])
+            
+            if travel_date in dates:
+                idx = dates.index(travel_date)
+                temp_max = daily.get('temperature_2m_max', [])[idx]
+                temp_min = daily.get('temperature_2m_min', [])[idx]
+                wcode = daily.get('weathercode', [])[idx]
+                
+                # WMO Weather Code to Condition & Icon map
+                condition_map = {
+                    0: ('Clear Sky', 'fa-sun', 'Excellent weather. Enjoy outdoor sightseeing, wear sunscreen, and stay hydrated.'),
+                    1: ('Partly Cloudy', 'fa-cloud-sun', 'Good weather for travel. Occasional clouds, pleasant visibility.'),
+                    2: ('Partly Cloudy', 'fa-cloud-sun', 'Good weather for travel. Occasional clouds, pleasant visibility.'),
+                    3: ('Overcast', 'fa-cloud', 'Overcast skies. Pleasant temperatures for walking, but carry a light layer.'),
+                    45: ('Foggy', 'fa-smog', 'Foggy conditions. Driving visibility might be reduced in morning hours.'),
+                    48: ('Foggy', 'fa-smog', 'Foggy conditions. Driving visibility might be reduced in morning hours.'),
+                    51: ('Light Drizzle', 'fa-cloud-rain', 'Light drizzle expected. Carry an umbrella or rain poncho.'),
+                    53: ('Light Drizzle', 'fa-cloud-rain', 'Light drizzle expected. Carry an umbrella or rain poncho.'),
+                    55: ('Light Drizzle', 'fa-cloud-rain', 'Light drizzle expected. Carry an umbrella or rain poncho.'),
+                    61: ('Rain Showers', 'fa-cloud-showers-heavy', 'Rain expected. High chance of waterlogging in low-lying roads. Carry rain gear.'),
+                    63: ('Heavy Rain', 'fa-cloud-showers-heavy', 'Heavy rain expected. High chance of waterlogging in low-lying roads. Carry rain gear.'),
+                    65: ('Heavy Torrential Rain', 'fa-cloud-showers-heavy', 'Heavy torrential rain forecast. Avoid mountain hikes or beach fronts. Expect travel delays.'),
+                    80: ('Rain Showers', 'fa-cloud-showers-heavy', 'Passing rain showers. Keep an umbrella handy.'),
+                    81: ('Rain Showers', 'fa-cloud-showers-heavy', 'Passing rain showers. Keep an umbrella handy.'),
+                    82: ('Violent Rain Showers', 'fa-cloud-showers-heavy', 'Violent rain showers. Avoid long travel on national highways.'),
+                    95: ('Thunderstorm', 'fa-cloud-bolt', 'Thunderstorms forecast. Stay indoors during lightning strikes.'),
+                    96: ('Thunderstorm', 'fa-cloud-bolt', 'Thunderstorms forecast. Stay indoors during lightning strikes.'),
+                    99: ('Thunderstorm with Hail', 'fa-cloud-bolt', 'Severe thunderstorms. Stay indoors, expect transport disruptions.')
+                }
+                
+                cond_text, icon, advisory = condition_map.get(wcode, ('Variable Conditions', 'fa-cloud-sun', 'Variable weather. Check local reports before starting.'))
+                avg_temp = round((temp_max + temp_min) / 2)
+                
+                return {
+                    'temp': avg_temp,
+                    'condition': f"{cond_text} ({temp_min}°C - {temp_max}°C)",
+                    'icon_class': icon,
+                    'advisory': advisory,
+                    'is_historical': False
+                }
+    except Exception as e:
+        print(f"Weather API fetch failed: {e}")
+    return None
+
+def get_live_news(search_location):
+    """
+    Attempts to fetch real-time news from GNews API using an environment key.
+    Falls back to pre-seeded local safety advisory feeds if no key or error.
+    """
+    news_api_key = os.getenv('NEWS_API_KEY')
+    if not news_api_key:
+        return None
+        
+    try:
+        # Search for location-specific safety, weather, or travel news
+        query = f'"{search_location}" AND (weather OR rain OR flood OR warning OR safety)'
+        url = f"https://gnews.io/api/v4/search?q={query}&lang=en&country=in&max=3&apikey={news_api_key}"
+        response = requests.get(url, timeout=3).json()
+        
+        articles = response.get('articles', [])
+        if articles:
+            news_results = []
+            for art in articles:
+                news_results.append({
+                    'title': art.get('title', 'Local Update'),
+                    'content': art.get('description', 'Read full article on source website.'),
+                    'severity': 'General Alert',
+                    'source': art.get('source', {}).get('name', 'GNews API')
+                })
+            return news_results
+    except Exception as e:
+        print(f"News API fetch failed: {e}")
+    return None
+
 seed_mock_data()
 
 # Database Helper Functions
@@ -488,41 +581,51 @@ def tourist_dashboard():
                 }
             ]
             
-        # 2. Date-based dynamic weather calculations (CSE implementation)
+        # 2. Real Weather Integration (Open-Meteo) & Climate Fallback
         if travel_date:
-            try:
-                dt_obj = datetime.strptime(travel_date, '%Y-%m-%d')
-                month = dt_obj.month
-                # Simulate climate conditions by calendar season in India
-                if month in [6, 7, 8, 9]: # Monsoon
-                    weather = {
-                        'temp': 27,
-                        'condition': 'Heavy Rain Showers',
-                        'icon_class': 'fa-cloud-showers-heavy',
-                        'advisory': 'Monsoon Active. Expect travel delays. Carry rain gear, umbrella, and water-resistant footwear.'
-                    }
-                    news.insert(0, {
-                        'title': f'Monsoon Warning Alert for {search_location}',
-                        'content': 'Heavy rainfall expected on planned travel dates. Road visibility may drop.',
-                        'severity': 'Warning',
-                        'source': 'Meteorological Dept'
-                    })
-                elif month in [11, 12, 1, 2]: # Winter
-                    weather = {
-                        'temp': 15,
-                        'condition': 'Cool Foggy Breeze',
-                        'icon_class': 'fa-snowflake',
-                        'advisory': 'Mild winter conditions. Light sweaters or jackets recommended during evening times.'
-                    }
-                else: # Summer
-                    weather = {
-                        'temp': 39,
-                        'condition': 'Intense Heat Wave',
-                        'icon_class': 'fa-sun',
-                        'advisory': 'Extremely hot temperatures. Avoid afternoon walks. Carry sunscreen and stay hydrated.'
-                    }
-            except ValueError:
-                pass
+            # Attempt to fetch live weather forecast (if within 14 days)
+            live_weather = get_live_weather(map_center[0], map_center[1], travel_date)
+            
+            if live_weather:
+                weather = live_weather
+            else:
+                # Fallback to monthly climatology average (since date is > 14 days or API offline)
+                try:
+                    dt_obj = datetime.strptime(travel_date, '%Y-%m-%d')
+                    month = dt_obj.month
+                    if month in [6, 7, 8, 9]: # Monsoon
+                        weather = {
+                            'temp': 28,
+                            'condition': 'Typical Monsoon Season',
+                            'icon_class': 'fa-cloud-showers-heavy',
+                            'advisory': 'Historically a wet monsoon period. Expect frequent rains. Carry an umbrella and water-resistant footwear.',
+                            'is_historical': True
+                        }
+                    elif month in [11, 12, 1, 2]: # Winter
+                        weather = {
+                            'temp': 16,
+                            'condition': 'Typical Cool Season',
+                            'icon_class': 'fa-snowflake',
+                            'advisory': 'Historically a winter period. Light woolens or jackets recommended for evenings.',
+                            'is_historical': True
+                        }
+                    else: # Summer
+                        weather = {
+                            'temp': 36,
+                            'condition': 'Typical Hot Season',
+                            'icon_class': 'fa-sun',
+                            'advisory': 'Historically a hot summer period. Dress in light cottons, carry sunscreen, and stay hydrated.',
+                            'is_historical': True
+                        }
+                except ValueError:
+                    pass
+                    
+        # 3. Real News Integration (GNews) & Fallbacks
+        if search_location:
+            live_news = get_live_news(search_location)
+            if live_news:
+                # Add real news to the top of the alerts feed
+                news = live_news + news
                 
     return render_template('tourist_dashboard.html',
                            search_location=search_location,
