@@ -641,6 +641,10 @@ def tourist_dashboard():
                 # Add real news to the top of the alerts feed
                 news = live_news + news
                 
+    # If a location is searched, redirect to the new city guide experience
+    if search_location:
+        return redirect(url_for('city_guide', city_name=search_location, travel_date=travel_date))
+
     return render_template('tourist_dashboard.html',
                            search_location=search_location,
                            travel_date=travel_date,
@@ -650,6 +654,196 @@ def tourist_dashboard():
                            listed_shops=listed_shops,
                            weather=weather,
                            news=news)
+
+
+# ==========================================
+# Dynamic Attractions Fetcher (OpenStreetMap Overpass)
+# ==========================================
+def fetch_dynamic_attractions(city_name, lat, lon):
+    """
+    Fetches tourist attractions for ANY city via OpenStreetMap Overpass API.
+    Returns a list of attraction dicts in the standard format.
+    """
+    try:
+        # Overpass query for tourism nodes within 25km of city center
+        overpass_url = "https://overpass-api.de/api/interpreter"
+        query = f"""
+        [out:json][timeout:10];
+        (
+          node["tourism"~"attraction|museum|viewpoint|artwork|theme_park|zoo|aquarium|gallery"](around:25000,{lat},{lon});
+          node["historic"~"castle|monument|ruins|archaeological_site|fort|palace|temple|mosque|church|memorial"](around:20000,{lat},{lon});
+          node["leisure"~"park|garden|nature_reserve|beach"](around:20000,{lat},{lon});
+        );
+        out body 30;
+        """
+        resp = requests.post(overpass_url, data={'data': query}, timeout=8)
+        if resp.status_code != 200:
+            return []
+
+        elements = resp.json().get('elements', [])
+        attractions = []
+
+        for el in elements[:20]:  # Cap at 20 dynamic results
+            tags = el.get('tags', {})
+            name = tags.get('name') or tags.get('name:en')
+            if not name or len(name) < 3:
+                continue
+
+            # Determine category
+            tourism = tags.get('tourism', '')
+            historic = tags.get('historic', '')
+            leisure = tags.get('leisure', '')
+            if 'museum' in tourism: cat = 'Museum'
+            elif historic in ['castle', 'fort', 'palace']: cat = 'Fort'
+            elif historic in ['temple', 'mosque', 'church']: cat = 'Religious'
+            elif historic in ['monument', 'memorial']: cat = 'Monument'
+            elif 'park' in leisure or 'garden' in leisure: cat = 'Park'
+            elif 'beach' in leisure: cat = 'Beach'
+            elif 'viewpoint' in tourism: cat = 'Viewpoint'
+            elif 'zoo' in tourism or 'aquarium' in tourism: cat = 'Nature'
+            else: cat = 'Cultural'
+
+            attractions.append({
+                'id': f"osm-{el.get('id', name.lower().replace(' ', '-'))}",
+                'name': name,
+                'category': cat,
+                'tags': ['family', 'history'],
+                'description': tags.get('description', f"{name} is a notable {cat.lower()} in {city_name}, worth visiting for its unique character and cultural significance."),
+                'history': 'Historical information available at the site.',
+                'why_famous': f"A well-known {cat.lower()} attraction in {city_name}.",
+                'interesting_facts': ['Located in the heart of the city', 'Popular among locals and tourists alike'],
+                'coordinates': [el.get('lat', lat), el.get('lon', lon)],
+                'address': tags.get('addr:full', city_name),
+                'ticket': {'adult': 0, 'child': 0, 'foreign': 0, 'student': 0, 'camera': 0, 'parking': 0, 'is_free': True},
+                'timings': {'open': 'Check locally', 'close': 'Check locally', 'weekly_off': 'Check locally', 'best_time': 'Morning', 'visit_duration': '1-2 hours'},
+                'facilities': {'wheelchair': False, 'photography': True, 'food_nearby': True, 'washroom': True, 'parking': True},
+                'crowd': 'Moderate',
+                'rating': 4.0,
+                'photo_keyword': f"{name} {city_name}",
+                'tips': ['Verify opening times locally before visiting.'],
+                'nearby': [],
+                'reviews': []
+            })
+
+        return attractions
+    except Exception as e:
+        print(f"Overpass API fetch failed: {e}")
+        return []
+
+
+def geocode_city(city_name):
+    """Uses Nominatim to get lat/lon for any city name."""
+    try:
+        url = f"https://nominatim.openstreetmap.org/search?q={requests.utils.quote(city_name)},India&format=json&limit=1"
+        resp = requests.get(url, headers={'User-Agent': 'SafeTour/1.0'}, timeout=5)
+        results = resp.json()
+        if results:
+            return float(results[0]['lat']), float(results[0]['lon'])
+    except Exception as e:
+        print(f"Geocoding failed: {e}")
+    return None, None
+
+
+# ==========================================
+# City Guide Route (NEW — Primary Feature)
+# ==========================================
+@app.route('/city-guide')
+def city_guide():
+    if not session.get('user_id') or session.get('role') != 'tourist':
+        flash("Please login as a Tourist first.", "danger")
+        return redirect(url_for('login', role_hint='tourist'))
+
+    import json as json_lib
+
+    city_name = request.args.get('city_name', '').strip()
+    travel_date = request.args.get('travel_date', '')
+    if not city_name:
+        return redirect(url_for('tourist_dashboard'))
+
+    # Try to load cities_data
+    city_data = None
+    attractions = []
+    map_center = [20.5937, 78.9629]  # Default India center
+
+    try:
+        from cities_data import CITIES, CITY_ALIASES
+        key = city_name.lower().strip()
+        key = CITY_ALIASES.get(key, key)
+        city_data = CITIES.get(key)
+    except ImportError:
+        pass  # cities_data.py not yet generated — will use dynamic fallback
+
+    if city_data:
+        attractions = city_data.get('attractions', [])
+        map_center = city_data.get('coordinates', [20.5937, 78.9629])
+    else:
+        # Dynamic fallback: geocode + Overpass OSM
+        lat, lon = geocode_city(city_name)
+        if lat and lon:
+            map_center = [lat, lon]
+            attractions = fetch_dynamic_attractions(city_name, lat, lon)
+        if not attractions:
+            # Last resort: return graceful empty state
+            attractions = []
+
+    # Fetch real weather
+    weather = {'temp': 30, 'condition': 'Partly Cloudy', 'icon_class': 'fa-cloud-sun', 'advisory': 'Enjoy your trip!', 'is_historical': False}
+    if travel_date and map_center:
+        live = get_live_weather(map_center[0], map_center[1], travel_date)
+        if live:
+            weather = live
+        else:
+            try:
+                dt_obj = datetime.strptime(travel_date, '%Y-%m-%d')
+                month = dt_obj.month
+                if month in [6, 7, 8, 9]:
+                    weather = {'temp': 28, 'condition': 'Typical Monsoon Season', 'icon_class': 'fa-cloud-showers-heavy', 'advisory': 'Monsoon period — carry rain gear.', 'is_historical': True}
+                elif month in [11, 12, 1, 2]:
+                    weather = {'temp': 17, 'condition': 'Typical Cool Season', 'icon_class': 'fa-snowflake', 'advisory': 'Cool winter — pack warm layers.', 'is_historical': True}
+                else:
+                    weather = {'temp': 36, 'condition': 'Typical Hot Season', 'icon_class': 'fa-sun', 'advisory': 'Hot season — stay hydrated.', 'is_historical': True}
+            except ValueError:
+                pass
+    elif map_center:
+        # No travel date provided — show current weather
+        from datetime import date
+        today_str = date.today().isoformat()
+        live = get_live_weather(map_center[0], map_center[1], today_str)
+        if live:
+            weather = live
+
+    # Fetch live news for the city
+    news = []
+    live_news = get_live_news(city_name)
+    if live_news:
+        news = live_news
+
+    # Serialize attractions for JavaScript
+    import json as json_lib
+    attractions_json = json_lib.dumps(attractions)
+    trip_cost_json = json_lib.dumps(city_data.get('trip_cost', {
+        'budget': {'per_day': 800, 'hotel': 400, 'food': 250, 'transport': 150},
+        'standard': {'per_day': 2500, 'hotel': 1500, 'food': 700, 'transport': 300},
+        'luxury': {'per_day': 8000, 'hotel': 5500, 'food': 1800, 'transport': 700}
+    }) if city_data else {
+        'budget': {'per_day': 800, 'hotel': 400, 'food': 250, 'transport': 150},
+        'standard': {'per_day': 2500, 'hotel': 1500, 'food': 700, 'transport': 300},
+        'luxury': {'per_day': 8000, 'hotel': 5500, 'food': 1800, 'transport': 700}
+    })
+
+    return render_template('city_guide.html',
+                           city_name=city_name,
+                           city_data=city_data,
+                           attractions=attractions,
+                           attractions_json=attractions_json,
+                           trip_cost_json=trip_cost_json,
+                           map_center=map_center,
+                           weather=weather,
+                           news=news,
+                           travel_date=travel_date,
+                           active_page='dashboard')
+
+
 
 
 # ==========================================

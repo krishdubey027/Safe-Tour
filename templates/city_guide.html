@@ -1,0 +1,1256 @@
+{% extends "base.html" %}
+{% block title %}{{ city_name }} Travel Guide – SafeTour{% endblock %}
+
+{% block extra_head %}
+<style>
+/* =============================================
+   CITY GUIDE PAGE — STANDALONE STYLES
+   ============================================= */
+
+/* Hero */
+.city-hero {
+    position: relative;
+    min-height: 380px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    border-radius: 0 0 36px 36px;
+    margin-bottom: 32px;
+}
+.city-hero-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    z-index: 0;
+}
+.city-hero-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.35;
+    z-index: 1;
+}
+.city-hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10,10,30,0.95) 0%, rgba(10,10,30,0.3) 60%, transparent 100%);
+    z-index: 2;
+}
+.city-hero-content {
+    position: relative; z-index: 3;
+    width: 100%; max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 36px;
+}
+.city-hero-breadcrumb {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 10px;
+    font-family: var(--font-body);
+}
+.city-hero-breadcrumb a { color: rgba(255,255,255,0.5); text-decoration: none; }
+.city-hero-breadcrumb a:hover { color: #fff; }
+.city-hero-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.15;
+    margin-bottom: 6px;
+}
+.city-hero-tagline {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.65);
+    font-family: var(--font-body);
+    margin-bottom: 20px;
+}
+.city-hero-meta {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 20px;
+}
+.hero-meta-chip {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 30px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.85);
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-body);
+}
+.weather-strip {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 10px 18px;
+    width: fit-content;
+    color: #fff;
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+}
+.weather-strip .wtemp { font-family: 'Manrope', sans-serif; font-size: 1.5rem; font-weight: 700; color: #fbbf24; }
+.weather-badge-live { background: #22c55e; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; }
+.weather-badge-hist { background: #3b82f6; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; }
+
+/* Search Bar */
+.city-search-bar {
+    max-width: 1400px; margin: 0 auto 28px; padding: 0 24px;
+}
+.search-input-wrap {
+    position: relative;
+    display: flex; align-items: center;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1.5px solid var(--border-glass);
+    border-radius: 18px;
+    padding: 4px 4px 4px 18px;
+    box-shadow: var(--shadow-md);
+}
+.search-input-wrap i { color: var(--color-text-muted); font-size: 1.1rem; margin-right: 10px; }
+.search-input-wrap input {
+    flex: 1; border: none; background: transparent;
+    font-family: var(--font-body); font-size: 1rem;
+    color: var(--color-text-main); outline: none;
+    padding: 10px 0;
+}
+.search-input-wrap input::placeholder { color: var(--color-text-muted); }
+.search-btn {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border: none; border-radius: 14px;
+    padding: 12px 24px; font-size: 0.9rem; font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer; transition: var(--transition);
+    display: flex; align-items: center; gap: 8px;
+}
+.search-btn:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(79,70,229,0.4); }
+
+/* Filters */
+.filter-row {
+    max-width: 1400px; margin: 0 auto 24px; padding: 0 24px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.filter-pill {
+    padding: 7px 16px; border-radius: 30px;
+    border: 1.5px solid var(--border-glass);
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    font-size: 0.82rem; font-family: var(--font-body);
+    color: var(--color-text-muted); cursor: pointer;
+    transition: var(--transition); white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+}
+.filter-pill:hover, .filter-pill.active {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border-color: transparent;
+    box-shadow: 0 4px 15px rgba(79,70,229,0.35);
+}
+.filter-count {
+    background: rgba(255,255,255,0.25); color: #fff;
+    font-size: 0.7rem; padding: 1px 5px; border-radius: 8px;
+    font-family: 'Manrope', sans-serif; font-weight: 700;
+}
+
+/* Main layout */
+.guide-layout {
+    max-width: 1400px; margin: 0 auto; padding: 0 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+}
+@media (max-width: 1024px) {
+    .guide-layout { grid-template-columns: 1fr; }
+}
+
+/* Attractions grid */
+.attractions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+.attraction-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+}
+.attraction-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    border-color: var(--primary);
+}
+.attraction-card-img {
+    width: 100%; height: 200px;
+    object-fit: cover;
+    display: block;
+    background: linear-gradient(135deg, #302b63, #24243e);
+}
+.card-img-skeleton {
+    width: 100%; height: 200px;
+    background: linear-gradient(90deg, var(--bg-glass) 25%, rgba(255,255,255,0.05) 50%, var(--bg-glass) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.card-category-badge {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; font-size: 0.72rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.card-free-badge {
+    position: absolute; top: 14px; right: 14px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff; font-size: 0.7rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.card-body { padding: 16px; }
+.card-name {
+    font-family: 'Poppins', sans-serif; font-weight: 700;
+    font-size: 1rem; color: var(--color-text-main);
+    margin-bottom: 4px; line-height: 1.3;
+}
+.card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.card-rating {
+    display: flex; align-items: center; gap: 4px;
+    font-family: 'Manrope', sans-serif; font-size: 0.82rem; font-weight: 700;
+    color: #f59e0b;
+}
+.card-price {
+    font-family: 'Manrope', sans-serif; font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+.card-price strong { color: var(--primary); }
+.card-desc {
+    font-size: 0.82rem; color: var(--color-text-muted);
+    line-height: 1.5; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 12px;
+}
+.card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.card-tag {
+    font-size: 0.7rem; padding: 3px 8px; border-radius: 8px;
+    background: rgba(79,70,229,0.1); color: var(--primary);
+    font-family: var(--font-body); font-weight: 500;
+}
+.card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-glass);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.card-timing { font-size: 0.75rem; color: var(--color-text-muted); display: flex; align-items: center; gap: 5px; }
+.card-more-btn {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border: none; border-radius: 10px;
+    padding: 6px 14px; font-size: 0.78rem; font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer;
+}
+.no-attractions { text-align: center; padding: 60px 20px; grid-column: 1 / -1; }
+.no-attractions i { font-size: 3rem; color: var(--color-text-muted); margin-bottom: 16px; display: block; }
+.no-attractions p { color: var(--color-text-muted); font-size: 1rem; }
+
+/* =============================================
+   SIDEBAR
+   ============================================= */
+.guide-sidebar { display: flex; flex-direction: column; gap: 20px; }
+.sidebar-panel {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+}
+.sidebar-panel h3 {
+    font-family: 'Poppins', sans-serif; font-weight: 700;
+    font-size: 0.95rem; color: var(--color-text-main);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.sidebar-panel h3 i { color: var(--primary); }
+
+/* Trip Cost Estimator */
+.cost-mode-btns { display: flex; gap: 6px; margin-bottom: 14px; }
+.cost-mode-btn {
+    flex: 1; padding: 8px; border-radius: 10px; border: 1.5px solid var(--border-glass);
+    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: transparent; color: var(--color-text-muted);
+    transition: var(--transition); text-align: center;
+}
+.cost-mode-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border-color: transparent;
+}
+.cost-duration { margin-bottom: 12px; }
+.cost-duration label { font-size: 0.8rem; color: var(--color-text-muted); font-family: var(--font-body); display: block; margin-bottom: 6px; }
+.cost-duration input[type=range] { width: 100%; accent-color: var(--primary); }
+.cost-breakdown { display: flex; flex-direction: column; gap: 8px; }
+.cost-row { display: flex; justify-content: space-between; align-items: center; }
+.cost-label { font-size: 0.8rem; color: var(--color-text-muted); font-family: var(--font-body); }
+.cost-val { font-size: 0.85rem; font-weight: 700; font-family: 'Manrope', sans-serif; color: var(--color-text-main); }
+.cost-total {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--border-glass);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.cost-total .cost-label { font-weight: 700; color: var(--color-text-main); font-size: 0.9rem; }
+.cost-total .cost-val { font-size: 1.1rem; color: var(--primary); }
+
+/* AI Assistant */
+.ai-messages { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.ai-msg-bot, .ai-msg-user {
+    padding: 8px 12px; border-radius: 14px;
+    font-size: 0.8rem; line-height: 1.5;
+    font-family: var(--font-body); max-width: 90%;
+}
+.ai-msg-bot { background: rgba(79,70,229,0.12); color: var(--color-text-main); align-self: flex-start; border-bottom-left-radius: 4px; }
+.ai-msg-user { background: linear-gradient(135deg, var(--primary), var(--purple)); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.ai-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.ai-chip {
+    font-size: 0.72rem; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border-glass); color: var(--color-text-muted);
+    cursor: pointer; font-family: var(--font-body);
+    background: var(--bg-glass); transition: var(--transition);
+}
+.ai-chip:hover { border-color: var(--primary); color: var(--primary); }
+.ai-input-row { display: flex; gap: 6px; }
+.ai-input {
+    flex: 1; padding: 8px 12px; border-radius: 10px;
+    border: 1.5px solid var(--border-glass);
+    background: transparent; font-family: var(--font-body);
+    font-size: 0.8rem; color: var(--color-text-main); outline: none;
+}
+.ai-input:focus { border-color: var(--primary); }
+.ai-send {
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    color: #fff; border: none; border-radius: 10px;
+    width: 36px; height: 36px; cursor: pointer; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Food & Instagram */
+.food-item {
+    padding: 10px 0; border-bottom: 1px solid var(--border-glass);
+    display: flex; gap: 12px; align-items: flex-start;
+}
+.food-item:last-child { border-bottom: none; }
+.food-emoji { font-size: 1.6rem; }
+.food-name { font-weight: 600; font-size: 0.85rem; color: var(--color-text-main); font-family: 'Poppins', sans-serif; }
+.food-where { font-size: 0.75rem; color: var(--color-text-muted); }
+
+.insta-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border-glass); }
+.insta-item:last-child { border-bottom: none; }
+.insta-icon { color: #e1306c; font-size: 1rem; margin-top: 2px; }
+.insta-name { font-size: 0.82rem; font-weight: 600; color: var(--color-text-main); font-family: 'Poppins', sans-serif; }
+.insta-tip { font-size: 0.73rem; color: var(--color-text-muted); }
+
+/* Map section */
+.map-section {
+    max-width: 1400px; margin: 0 auto 32px; padding: 0 24px;
+}
+.map-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px; overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+.map-card h3 { padding: 16px 20px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 700; color: var(--color-text-main); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-glass); }
+.map-card h3 i { color: var(--primary); }
+#city-map { height: 380px; }
+
+/* News section */
+.news-section {
+    max-width: 1400px; margin: 0 auto 32px; padding: 0 24px;
+}
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.news-card {
+    background: var(--bg-glass); backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass); border-radius: 16px;
+    padding: 16px; box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+.news-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.news-card-badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 6px; margin-bottom: 8px;
+    font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.3px;
+}
+.badge-breaking { background: #dc2626; color: #fff; }
+.badge-weather { background: #2563eb; color: #fff; }
+.badge-advisory { background: #d97706; color: #fff; }
+.badge-general { background: rgba(79,70,229,0.15); color: var(--primary); }
+.news-card-source { font-size: 0.72rem; color: var(--color-text-muted); margin-bottom: 6px; font-family: var(--font-body); }
+.news-card-title {
+    font-size: 0.88rem; font-weight: 600; color: var(--color-text-main);
+    font-family: 'Poppins', sans-serif; line-height: 1.4; margin-bottom: 6px;
+}
+.news-card-title a { color: inherit; text-decoration: none; }
+.news-card-title a:hover { color: var(--primary); }
+.news-card-desc { font-size: 0.77rem; color: var(--color-text-muted); line-height: 1.5; font-family: var(--font-body); }
+.section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+}
+.section-title-main {
+    font-family: 'Poppins', sans-serif; font-size: 1.3rem; font-weight: 700;
+    color: var(--color-text-main); display: flex; align-items: center; gap: 10px;
+}
+.section-title-main i { color: var(--primary); }
+.count-badge-main {
+    background: rgba(79,70,229,0.12); color: var(--primary);
+    font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    font-family: 'Manrope', sans-serif;
+}
+
+/* =============================================
+   ATTRACTION DETAIL MODAL
+   ============================================= */
+.modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-glass);
+    border-radius: 28px;
+    width: 100%; max-width: 960px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(30px) scale(0.97);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+    scrollbar-width: thin;
+}
+.modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+
+.modal-close {
+    position: absolute; top: 18px; right: 18px; z-index: 10;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2); color: #fff;
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+}
+.modal-close:hover { background: #ef4444; transform: scale(1.1); }
+
+.modal-gallery {
+    position: relative; width: 100%; height: 300px; overflow: hidden;
+    border-radius: 28px 28px 0 0;
+}
+.swiper-modal { height: 300px; }
+.swiper-slide img {
+    width: 100%; height: 300px; object-fit: cover;
+    display: block;
+}
+.modal-body { padding: 24px; }
+.modal-title {
+    font-family: 'Poppins', sans-serif; font-size: 1.6rem; font-weight: 800;
+    color: var(--color-text-main); margin-bottom: 4px;
+}
+.modal-subtitle { color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 16px; font-family: var(--font-body); }
+.modal-meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.modal-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg-glass); border: 1px solid var(--border-glass);
+    border-radius: 12px; padding: 6px 12px;
+    font-size: 0.8rem; color: var(--color-text-muted);
+    font-family: var(--font-body);
+}
+.modal-chip i { color: var(--primary); }
+.modal-chip strong { color: var(--color-text-main); }
+.modal-chip.free-chip { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); }
+.modal-chip.free-chip strong { color: #16a34a; }
+
+/* Tabs */
+.modal-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border-glass); }
+.modal-tab {
+    padding: 8px 18px; font-size: 0.85rem; font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--color-text-muted); cursor: pointer; border: none;
+    background: transparent; border-bottom: 3px solid transparent;
+    margin-bottom: -2px; transition: var(--transition);
+}
+.modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.modal-tab-content { display: none; }
+.modal-tab-content.active { display: block; }
+
+.modal-section-label {
+    font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 700;
+    color: var(--color-text-main); margin: 16px 0 8px;
+    display: flex; align-items: center; gap: 6px;
+}
+.modal-section-label i { color: var(--primary); }
+.modal-text { font-size: 0.88rem; color: var(--color-text-muted); line-height: 1.7; font-family: var(--font-body); }
+.modal-facts { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.modal-facts li { font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-body); padding-left: 20px; position: relative; }
+.modal-facts li::before { content: '✦'; position: absolute; left: 0; color: var(--primary); font-size: 0.65rem; top: 4px; }
+.modal-tips { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.modal-tips li { font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-body); padding-left: 22px; position: relative; }
+.modal-tips li::before { content: '💡'; position: absolute; left: 0; font-size: 0.8rem; }
+
+.ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.ticket-box {
+    background: var(--bg-glass); border: 1px solid var(--border-glass);
+    border-radius: 12px; padding: 12px; text-align: center;
+}
+.ticket-box .ticket-type { font-size: 0.72rem; color: var(--color-text-muted); font-family: var(--font-body); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ticket-box .ticket-price { font-size: 1rem; font-weight: 800; color: var(--primary); font-family: 'Manrope', sans-serif; }
+.ticket-box.free-box { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.25); }
+.ticket-box.free-box .ticket-price { color: #16a34a; }
+
+.timing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.timing-box { background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: 12px; padding: 12px; }
+.timing-box .timing-label { font-size: 0.72rem; color: var(--color-text-muted); font-family: var(--font-body); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.timing-box .timing-val { font-size: 0.88rem; font-weight: 600; color: var(--color-text-main); font-family: 'Manrope', sans-serif; }
+
+.facility-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.facility-chip {
+    padding: 5px 12px; border-radius: 20px; font-size: 0.78rem;
+    display: flex; align-items: center; gap: 5px;
+    font-family: var(--font-body); font-weight: 500;
+}
+.facility-chip.yes { background: rgba(34,197,94,0.1); color: #16a34a; border: 1px solid rgba(34,197,94,0.25); }
+.facility-chip.no { background: rgba(239,68,68,0.1); color: #dc2626; border: 1px solid rgba(239,68,68,0.2); }
+
+.reviews-list { display: flex; flex-direction: column; gap: 12px; }
+.review-item { background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: 14px; padding: 14px; }
+.review-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.review-author { font-weight: 700; font-size: 0.85rem; color: var(--color-text-main); font-family: 'Poppins', sans-serif; }
+.review-date { font-size: 0.75rem; color: var(--color-text-muted); }
+.review-stars { color: #f59e0b; font-size: 0.8rem; margin-bottom: 5px; }
+.review-text { font-size: 0.83rem; color: var(--color-text-muted); font-family: var(--font-body); line-height: 1.5; }
+
+.nearby-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.nearby-pill {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1.5px solid var(--border-glass);
+    background: var(--bg-glass); font-size: 0.8rem;
+    color: var(--color-text-muted); cursor: pointer;
+    font-family: var(--font-body); transition: var(--transition);
+    display: flex; align-items: center; gap: 5px;
+}
+.nearby-pill:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Dynamic map inside modal */
+#modal-map { height: 200px; border-radius: 12px; margin-top: 10px; }
+
+/* Wishlist btn */
+.wishlist-btn {
+    position: absolute; top: 60px; right: 18px; z-index: 10;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2); color: #fff;
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+}
+.wishlist-btn.saved { background: #ef4444; border-color: #ef4444; }
+.wishlist-btn:hover { transform: scale(1.15); }
+
+/* Dynamic city fallback notice */
+.dynamic-notice {
+    background: rgba(79,70,229,0.08); border: 1px solid rgba(79,70,229,0.2);
+    border-radius: 14px; padding: 12px 16px;
+    font-size: 0.82rem; color: var(--color-text-muted);
+    font-family: var(--font-body); margin-bottom: 20px;
+    display: flex; align-items: flex-start; gap: 10px;
+}
+.dynamic-notice i { color: var(--primary); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ============ HERO ============ -->
+<section class="city-hero">
+    <div class="city-hero-bg"></div>
+    <img class="city-hero-img"
+         src="https://source.unsplash.com/1600x600/?{{ city_name }},India,travel"
+         alt="{{ city_name }}"
+         loading="lazy">
+    <div class="city-hero-overlay"></div>
+    <div class="city-hero-content">
+        <div class="city-hero-breadcrumb">
+            <a href="{{ url_for('tourist_dashboard') }}">← Back to search</a>
+        </div>
+        <h1 class="city-hero-title">{{ city_data.name if city_data else city_name }}</h1>
+        <p class="city-hero-tagline">{{ city_data.tagline if city_data else 'Explore this destination' }}</p>
+        <div class="city-hero-meta">
+            {% if city_data %}
+            <span class="hero-meta-chip"><i class="fa-solid fa-location-dot"></i> {{ city_data.state }}</span>
+            <span class="hero-meta-chip"><i class="fa-solid fa-calendar-check"></i> Best: {{ city_data.best_season }}</span>
+            <span class="hero-meta-chip"><i class="fa-solid fa-language"></i> {{ city_data.languages | join(', ') if city_data.languages else 'Hindi, English' }}</span>
+            {% endif %}
+            <span class="hero-meta-chip"><i class="fa-solid fa-binoculars"></i> {{ attractions | length }} Attractions</span>
+        </div>
+
+        <!-- Live Weather Strip -->
+        {% if weather %}
+        <div class="weather-strip">
+            <i class="fa-solid {{ weather.icon_class }}" style="color: #fbbf24; font-size: 1.3rem;"></i>
+            <span class="wtemp">{{ weather.temp }}°C</span>
+            <span>{{ weather.condition }}</span>
+            {% if weather.is_historical %}
+            <span class="weather-badge-hist">Avg</span>
+            {% else %}
+            <span class="weather-badge-live">Live</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ============ SEARCH BAR ============ -->
+<div class="city-search-bar">
+    <form method="GET" action="{{ url_for('tourist_dashboard') }}">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="citySearchInput" name="location"
+                   placeholder="Search another city — Delhi, Goa, Manali, Jaipur..."
+                   value="{{ city_name }}" autocomplete="off">
+            <button type="submit" class="search-btn">
+                <i class="fa-solid fa-paper-plane"></i> Explore
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- ============ CATEGORY FILTERS ============ -->
+<div class="filter-row" id="filterRow">
+    <span style="font-size: 0.8rem; color: var(--color-text-muted); font-family: var(--font-body); white-space: nowrap;">Filter by:</span>
+    <button class="filter-pill active" data-filter="all" onclick="filterAttractions('all', this)">
+        <i class="fa-solid fa-border-all"></i> All
+        <span class="filter-count">{{ attractions | length }}</span>
+    </button>
+    {% for cat in ['Monument', 'Temple', 'Museum', 'Park', 'Beach', 'Fort', 'Palace', 'Market', 'Nature', 'Adventure', 'Religious', 'Lake', 'Waterfall', 'Garden', 'Viewpoint', 'Hidden Gem', 'Cultural'] %}
+    {% set cat_count = attractions | selectattr('category', 'equalto', cat) | list | length %}
+    {% if cat_count > 0 %}
+    <button class="filter-pill" data-filter="{{ cat }}" onclick="filterAttractions('{{ cat }}', this)">
+        {{ cat }}
+        <span class="filter-count" style="background: rgba(0,0,0,0.15);">{{ cat_count }}</span>
+    </button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- ============ MAIN LAYOUT ============ -->
+<div class="guide-layout">
+
+    <!-- LEFT: Attractions Grid -->
+    <div>
+        <!-- Dynamic city notice -->
+        {% if not city_data %}
+        <div class="dynamic-notice">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Showing dynamically loaded attractions for <strong>{{ city_name }}</strong> from OpenStreetMap. Data may vary by coverage.</span>
+        </div>
+        {% endif %}
+
+        <div class="section-header">
+            <h2 class="section-title-main"><i class="fa-solid fa-map-pin"></i> Top Attractions</h2>
+            <span class="count-badge-main" id="attractionCount">{{ attractions | length }} places</span>
+        </div>
+
+        <div class="attractions-grid" id="attractionsGrid">
+            {% for a in attractions %}
+            <div class="attraction-card" data-category="{{ a.category }}"
+                 onclick="openModal({{ loop.index0 }})">
+                <!-- Category Badge -->
+                <span class="card-category-badge">{{ a.category }}</span>
+                {% if a.ticket.is_free %}
+                <span class="card-free-badge">✅ FREE</span>
+                {% endif %}
+
+                <!-- Lazy-load image via Unsplash Source -->
+                <img class="attraction-card-img"
+                     src="https://source.unsplash.com/600x300/?{{ a.photo_keyword | urlencode }}"
+                     alt="{{ a.name }}"
+                     loading="lazy"
+                     onerror="this.src='https://source.unsplash.com/600x300/?India,tourism,travel'">
+
+                <div class="card-body">
+                    <div class="card-name">{{ a.name }}</div>
+                    <div class="card-meta">
+                        <div class="card-rating">
+                            <i class="fa-solid fa-star"></i>
+                            {{ a.rating }}
+                        </div>
+                        <div class="card-price">
+                            {% if a.ticket.is_free %}
+                                <strong>Free Entry</strong>
+                            {% else %}
+                                Indian: <strong>₹{{ a.ticket.adult }}</strong>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p class="card-desc">{{ a.description }}</p>
+                    <div class="card-tags">
+                        {% for tag in a.tags[:3] %}
+                        <span class="card-tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span class="card-timing"><i class="fa-regular fa-clock"></i> {{ a.timings.open }}</span>
+                    <button class="card-more-btn">Details →</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-attractions">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <p>No attractions found. Try a different filter!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <div class="guide-sidebar">
+
+        <!-- Trip Cost Estimator -->
+        {% if city_data and city_data.trip_cost %}
+        <div class="sidebar-panel">
+            <h3><i class="fa-solid fa-wallet"></i> Trip Cost Estimator</h3>
+            <div class="cost-mode-btns">
+                <button class="cost-mode-btn active" onclick="setCostMode('budget', this)">🎒 Budget</button>
+                <button class="cost-mode-btn" onclick="setCostMode('standard', this)">🏨 Standard</button>
+                <button class="cost-mode-btn" onclick="setCostMode('luxury', this)">💎 Luxury</button>
+            </div>
+            <div class="cost-duration">
+                <label>Trip duration: <strong id="tripDaysLabel">3 days</strong></label>
+                <input type="range" min="1" max="10" value="3" id="tripDaysSlider" oninput="updateCost()">
+            </div>
+            <div class="cost-breakdown">
+                <div class="cost-row"><span class="cost-label">🏨 Hotel (per night)</span><span class="cost-val" id="costHotel">₹0</span></div>
+                <div class="cost-row"><span class="cost-label">🍽️ Food (per day)</span><span class="cost-val" id="costFood">₹0</span></div>
+                <div class="cost-row"><span class="cost-label">🚗 Transport (per day)</span><span class="cost-val" id="costTransport">₹0</span></div>
+                <div class="cost-total">
+                    <span class="cost-label">💰 Total Estimate</span>
+                    <span class="cost-val" id="costTotal">₹0</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI Travel Assistant -->
+        <div class="sidebar-panel">
+            <h3><i class="fa-solid fa-robot"></i> AI Travel Assistant</h3>
+            <div class="ai-messages" id="aiMessages">
+                <div class="ai-msg-bot">
+                    👋 Hi! I'm your SafeTour AI assistant for <strong>{{ city_data.name if city_data else city_name }}</strong>. What would you like to know?
+                </div>
+            </div>
+            <div class="ai-chips">
+                <span class="ai-chip" onclick="askAI('Best time to visit?')">🗓️ Best time?</span>
+                <span class="ai-chip" onclick="askAI('1-day itinerary')">📋 1-day plan</span>
+                <span class="ai-chip" onclick="askAI('Budget tips')">💸 Budget tips</span>
+                <span class="ai-chip" onclick="askAI('Hidden gems')">💎 Hidden gems</span>
+                <span class="ai-chip" onclick="askAI('Is it safe?')">🛡️ Safety?</span>
+                <span class="ai-chip" onclick="askAI('Packing list')">🎒 Packing?</span>
+            </div>
+            <div class="ai-input-row">
+                <input class="ai-input" id="aiInput" type="text" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter')sendAI()">
+                <button class="ai-send" onclick="sendAI()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <!-- Famous Food -->
+        {% if city_data and city_data.famous_food %}
+        <div class="sidebar-panel">
+            <h3><i class="fa-solid fa-utensils"></i> Famous Local Food</h3>
+            {% set food_emojis = ['🍛', '🫓', '🥘', '🍜', '🧆', '🫔'] %}
+            {% for food in city_data.famous_food[:5] %}
+            <div class="food-item">
+                <span class="food-emoji">{{ food_emojis[loop.index0 % food_emojis|length] }}</span>
+                <div>
+                    <div class="food-name">{{ food.name }}</div>
+                    <div class="food-where">📍 {{ food.where_to_eat }}</div>
+                    <div class="food-where" style="margin-top: 2px;">{{ food.description }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Instagram Spots -->
+        {% if city_data and city_data.instagram_spots %}
+        <div class="sidebar-panel">
+            <h3><i class="fa-brands fa-instagram"></i> Instagram Spots</h3>
+            {% for spot in city_data.instagram_spots %}
+            <div class="insta-item">
+                <i class="fa-solid fa-camera insta-icon"></i>
+                <div>
+                    <div class="insta-name">{{ spot.name }}</div>
+                    <div class="insta-tip">💡 {{ spot.tip }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- ============ MAP ============ -->
+<div class="map-section">
+    <div class="section-header">
+        <h2 class="section-title-main"><i class="fa-solid fa-map"></i> Attractions Map</h2>
+    </div>
+    <div class="map-card">
+        <h3><i class="fa-solid fa-location-crosshairs"></i> All Attractions — {{ city_data.name if city_data else city_name }}</h3>
+        <div id="city-map"></div>
+    </div>
+</div>
+
+<!-- ============ NEWS ============ -->
+{% if news %}
+<div class="news-section">
+    <div class="section-header">
+        <h2 class="section-title-main"><i class="fa-solid fa-newspaper"></i> Today's News — {{ city_data.name if city_data else city_name }}</h2>
+        <span class="count-badge-main">{{ news | length }} stories</span>
+    </div>
+    <div class="news-grid">
+        {% for item in news %}
+        <div class="news-card">
+            <div>
+                {% if item.severity == 'Breaking News' %}
+                <span class="news-card-badge badge-breaking">Breaking</span>
+                {% elif item.severity == 'Warning' %}
+                <span class="news-card-badge badge-advisory">Advisory</span>
+                {% else %}
+                <span class="news-card-badge badge-general">News</span>
+                {% endif %}
+            </div>
+            <div class="news-card-source">{{ item.source }}</div>
+            <div class="news-card-title">
+                {% if item.url %}
+                <a href="{{ item.url }}" target="_blank" rel="noopener">
+                    {{ item.title }}
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; margin-left: 3px;"></i>
+                </a>
+                {% else %}{{ item.title }}{% endif %}
+            </div>
+            <div class="news-card-desc">{{ item.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ ATTRACTION DETAIL MODAL ============ -->
+<div class="modal-overlay" id="attractionModal" onclick="closeModalIfOutside(event)">
+    <div class="modal-box" id="modalBox" style="position:relative;">
+        <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+        <button class="wishlist-btn" id="wishlistBtn" onclick="toggleWishlist()" title="Save to wishlist">
+            <i class="fa-regular fa-heart"></i>
+        </button>
+
+        <!-- Image Gallery -->
+        <div class="modal-gallery">
+            <div class="swiper swiper-modal" id="modalSwiper">
+                <div class="swiper-wrapper" id="modalGallery"></div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+            </div>
+        </div>
+
+        <div class="modal-body">
+            <h2 class="modal-title" id="modalTitle">-</h2>
+            <p class="modal-subtitle" id="modalSubtitle">-</p>
+
+            <!-- Meta chips row -->
+            <div class="modal-meta-row" id="modalMetaRow"></div>
+
+            <!-- Tabs -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" onclick="switchTab('overview', this)">Overview</button>
+                <button class="modal-tab" onclick="switchTab('visitor', this)">Visitor Guide</button>
+                <button class="modal-tab" onclick="switchTab('nearby', this)">Nearby</button>
+                <button class="modal-tab" onclick="switchTab('reviews', this)">Reviews</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="modal-tab-content active" id="tab-overview">
+                <p class="modal-section-label"><i class="fa-solid fa-circle-info"></i> About</p>
+                <p class="modal-text" id="modalDesc"></p>
+                <p class="modal-section-label"><i class="fa-solid fa-landmark"></i> History</p>
+                <p class="modal-text" id="modalHistory"></p>
+                <p class="modal-section-label"><i class="fa-solid fa-star"></i> Why Famous</p>
+                <p class="modal-text" id="modalWhyFamous"></p>
+                <p class="modal-section-label"><i class="fa-solid fa-lightbulb"></i> Interesting Facts</p>
+                <ul class="modal-facts" id="modalFacts"></ul>
+            </div>
+
+            <!-- Visitor Guide Tab -->
+            <div class="modal-tab-content" id="tab-visitor">
+                <p class="modal-section-label"><i class="fa-solid fa-ticket"></i> Ticket Prices</p>
+                <div class="ticket-grid" id="modalTickets"></div>
+                <p class="modal-section-label"><i class="fa-regular fa-clock"></i> Timings & Info</p>
+                <div class="timing-grid" id="modalTimings"></div>
+                <p class="modal-section-label"><i class="fa-solid fa-wheelchair"></i> Facilities</p>
+                <div class="facility-chips" id="modalFacilities"></div>
+                <p class="modal-section-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Visitor Tips</p>
+                <ul class="modal-tips" id="modalTips"></ul>
+                <p class="modal-section-label"><i class="fa-solid fa-map-pin"></i> Location Map</p>
+                <div id="modal-map"></div>
+            </div>
+
+            <!-- Nearby Tab -->
+            <div class="modal-tab-content" id="tab-nearby">
+                <p class="modal-section-label"><i class="fa-solid fa-location-dot"></i> Nearby Attractions</p>
+                <div class="nearby-list" id="modalNearby"></div>
+            </div>
+
+            <!-- Reviews Tab -->
+            <div class="modal-tab-content" id="tab-reviews">
+                <div class="reviews-list" id="modalReviews"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ==========================================
+// DATA FROM FLASK
+// ==========================================
+const ATTRACTIONS = {{ attractions_json | safe }};
+const CITY_CENTER = {{ map_center | tojson }};
+const CITY_NAME = {{ city_name | tojson }};
+const TRIP_COST_DATA = {{ trip_cost_json | safe }};
+
+// ==========================================
+// FILTER
+// ==========================================
+function filterAttractions(cat, btn) {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const cards = document.querySelectorAll('.attraction-card');
+    let visible = 0;
+    cards.forEach(card => {
+        const matches = cat === 'all' || card.dataset.category === cat;
+        card.style.display = matches ? '' : 'none';
+        if (matches) visible++;
+    });
+    document.getElementById('attractionCount').textContent = visible + ' places';
+}
+
+// ==========================================
+// MODAL
+// ==========================================
+let currentAttrIdx = null;
+let modalSwiper = null;
+let modalMap = null;
+
+function openModal(idx) {
+    currentAttrIdx = idx;
+    const a = ATTRACTIONS[idx];
+    if (!a) return;
+
+    // Populate header
+    document.getElementById('modalTitle').textContent = a.name;
+    document.getElementById('modalSubtitle').textContent = a.address || (a.category + ' — ' + CITY_NAME);
+
+    // Meta chips
+    const metaRow = document.getElementById('modalMetaRow');
+    metaRow.innerHTML = `
+        <div class="modal-chip"><i class="fa-solid fa-star" style="color:#f59e0b;"></i> <strong>${a.rating}</strong> rating</div>
+        <div class="modal-chip"><i class="fa-solid fa-layer-group"></i> ${a.category}</div>
+        <div class="modal-chip"><i class="fa-solid fa-users"></i> Crowd: <strong>${a.crowd || 'Moderate'}</strong></div>
+        <div class="modal-chip"><i class="fa-regular fa-clock"></i> ${a.timings.visit_duration}</div>
+        ${a.ticket.is_free ? '<div class="modal-chip free-chip"><i class="fa-solid fa-check-circle"></i><strong>FREE ENTRY</strong></div>' : ''}
+    `;
+
+    // Gallery
+    const gallery = document.getElementById('modalGallery');
+    const keywords = [a.photo_keyword, a.name + ' India', a.category + ' India travel'];
+    gallery.innerHTML = keywords.map((kw, i) =>
+        `<div class="swiper-slide"><img src="https://source.unsplash.com/960x320/?${encodeURIComponent(kw)}&sig=${idx}_${i}" alt="${a.name}" loading="lazy" onerror="this.src='https://source.unsplash.com/960x320/?India,travel,tourism&sig=${Math.random()}'" /></div>`
+    ).join('');
+
+    // Init / refresh swiper
+    if (modalSwiper) { modalSwiper.destroy(true, true); }
+    modalSwiper = new Swiper('#modalSwiper', {
+        loop: true,
+        pagination: { el: '.swiper-pagination', clickable: true },
+        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
+    });
+
+    // Overview tab
+    document.getElementById('modalDesc').textContent = a.description;
+    document.getElementById('modalHistory').textContent = a.history || 'Historical information not available.';
+    document.getElementById('modalWhyFamous').textContent = a.why_famous || 'This attraction is a popular destination.';
+    const factsList = document.getElementById('modalFacts');
+    factsList.innerHTML = (a.interesting_facts || []).map(f => `<li>${f}</li>`).join('') || '<li>No facts available.</li>';
+
+    // Visitor guide tab — tickets
+    const tkt = a.ticket;
+    let ticketHTML = '';
+    if (tkt.is_free) {
+        ticketHTML = `<div class="ticket-box free-box"><div class="ticket-type">Entry</div><div class="ticket-price">✅ FREE</div></div>`;
+    } else {
+        if (tkt.adult) ticketHTML += `<div class="ticket-box"><div class="ticket-type">Indian Adult</div><div class="ticket-price">₹${tkt.adult}</div></div>`;
+        if (tkt.child) ticketHTML += `<div class="ticket-box"><div class="ticket-type">Child</div><div class="ticket-price">₹${tkt.child}</div></div>`;
+        if (tkt.foreign) ticketHTML += `<div class="ticket-box"><div class="ticket-type">Foreign</div><div class="ticket-price">₹${tkt.foreign}</div></div>`;
+        if (tkt.student) ticketHTML += `<div class="ticket-box"><div class="ticket-type">Student</div><div class="ticket-price">₹${tkt.student}</div></div>`;
+        if (tkt.camera) ticketHTML += `<div class="ticket-box"><div class="ticket-type">Camera</div><div class="ticket-price">₹${tkt.camera}</div></div>`;
+        if (tkt.parking) ticketHTML += `<div class="ticket-box"><div class="ticket-type">Parking</div><div class="ticket-price">₹${tkt.parking}</div></div>`;
+    }
+    document.getElementById('modalTickets').innerHTML = ticketHTML;
+
+    // Timings
+    const t = a.timings;
+    document.getElementById('modalTimings').innerHTML = `
+        <div class="timing-box"><div class="timing-label">Opens</div><div class="timing-val">${t.open}</div></div>
+        <div class="timing-box"><div class="timing-label">Closes</div><div class="timing-val">${t.close}</div></div>
+        <div class="timing-box"><div class="timing-label">Weekly Off</div><div class="timing-val">${t.weekly_off || 'None'}</div></div>
+        <div class="timing-box"><div class="timing-label">Best Time</div><div class="timing-val">${t.best_time}</div></div>
+    `;
+
+    // Facilities
+    const fac = a.facilities || {};
+    const facItems = [
+        ['fa-wheelchair', 'Wheelchair', fac.wheelchair],
+        ['fa-camera', 'Photography', fac.photography],
+        ['fa-utensils', 'Food Nearby', fac.food_nearby],
+        ['fa-restroom', 'Washroom', fac.washroom],
+        ['fa-square-parking', 'Parking', fac.parking],
+    ];
+    document.getElementById('modalFacilities').innerHTML = facItems.map(([icon, label, val]) =>
+        `<span class="facility-chip ${val ? 'yes' : 'no'}"><i class="fa-solid ${icon}"></i> ${label}: ${val ? 'Yes' : 'No'}</span>`
+    ).join('');
+
+    // Tips
+    document.getElementById('modalTips').innerHTML = (a.tips || ['Plan your visit in advance.']).map(t => `<li>${t}</li>`).join('');
+
+    // Nearby
+    document.getElementById('modalNearby').innerHTML = (a.nearby || []).map(n =>
+        `<span class="nearby-pill" onclick="closeAndSearch('${n}')"><i class="fa-solid fa-arrow-right"></i> ${n}</span>`
+    ).join('') || '<span style="color:var(--color-text-muted);font-size:0.85rem;">No nearby data available.</span>';
+
+    // Reviews
+    document.getElementById('modalReviews').innerHTML = (a.reviews || []).map(r =>
+        `<div class="review-item">
+            <div class="review-top">
+                <span class="review-author">${r.author}</span>
+                <span class="review-date">${r.date}</span>
+            </div>
+            <div class="review-stars">${'★'.repeat(Math.round(r.rating))}${'☆'.repeat(5-Math.round(r.rating))}</div>
+            <div class="review-text">${r.text}</div>
+        </div>`
+    ).join('') || '<p style="color:var(--color-text-muted);font-size:0.85rem;">No reviews yet.</p>';
+
+    // Wishlist state
+    updateWishlistBtn(a.id);
+
+    // Open overlay
+    document.getElementById('attractionModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    // Default tab
+    switchTab('overview', document.querySelector('.modal-tab'));
+
+    // Init modal map (deferred)
+    setTimeout(() => initModalMap(a.coordinates, a.name), 200);
+}
+
+function initModalMap(coords, name) {
+    if (modalMap) { modalMap.remove(); modalMap = null; }
+    if (!coords) return;
+    modalMap = L.map('modal-map', { zoomControl: true }).setView(coords, 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(modalMap);
+    L.marker(coords).addTo(modalMap).bindPopup(name).openPopup();
+}
+
+function closeModal() {
+    document.getElementById('attractionModal').classList.remove('open');
+    document.body.style.overflow = '';
+    if (modalMap) { modalMap.remove(); modalMap = null; }
+}
+
+function closeModalIfOutside(e) {
+    if (e.target === document.getElementById('attractionModal')) closeModal();
+}
+
+function switchTab(tab, btn) {
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+
+    // Re-init map when visitor tab opens
+    if (tab === 'visitor' && currentAttrIdx !== null) {
+        setTimeout(() => {
+            const a = ATTRACTIONS[currentAttrIdx];
+            initModalMap(a.coordinates, a.name);
+        }, 100);
+    }
+}
+
+// ==========================================
+// WISHLIST (localStorage)
+// ==========================================
+function getWishlist() { return JSON.parse(localStorage.getItem('safetour-wishlist') || '[]'); }
+function toggleWishlist() {
+    if (currentAttrIdx === null) return;
+    const a = ATTRACTIONS[currentAttrIdx];
+    let wl = getWishlist();
+    const idx = wl.findIndex(x => x.id === a.id);
+    if (idx >= 0) wl.splice(idx, 1); else wl.push({id: a.id, name: a.name, city: CITY_NAME});
+    localStorage.setItem('safetour-wishlist', JSON.stringify(wl));
+    updateWishlistBtn(a.id);
+}
+function updateWishlistBtn(id) {
+    const btn = document.getElementById('wishlistBtn');
+    const saved = getWishlist().some(x => x.id === id);
+    btn.classList.toggle('saved', saved);
+    btn.innerHTML = saved ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+    btn.title = saved ? 'Remove from wishlist' : 'Save to wishlist';
+}
+
+// ==========================================
+// MAIN ATTRACTIONS MAP
+// ==========================================
+function initMainMap() {
+    const map = L.map('city-map').setView(CITY_CENTER, 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const catColors = {
+        'Monument': '#4f46e5', 'Temple': '#f59e0b', 'Museum': '#0891b2',
+        'Park': '#22c55e', 'Beach': '#06b6d4', 'Fort': '#dc2626',
+        'Palace': '#9333ea', 'Market': '#f97316', 'Nature': '#16a34a',
+        'default': '#6b7280'
+    };
+
+    ATTRACTIONS.forEach((a, idx) => {
+        if (!a.coordinates) return;
+        const color = catColors[a.category] || catColors.default;
+        const icon = L.divIcon({
+            className: '',
+            html: `<div style="background:${color};color:#fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;"></div>`,
+            iconSize: [28, 28], iconAnchor: [14, 28]
+        });
+        L.marker(a.coordinates, { icon })
+            .addTo(map)
+            .bindPopup(`<strong>${a.name}</strong><br>${a.category}<br><small>₹${a.ticket.is_free ? 'Free' : a.ticket.adult}</small>`)
+            .on('click', () => openModal(idx));
+    });
+}
+
+// ==========================================
+// TRIP COST ESTIMATOR
+// ==========================================
+let costMode = 'budget';
+let tripDays = 3;
+
+function setCostMode(mode, btn) {
+    costMode = mode;
+    document.querySelectorAll('.cost-mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateCost();
+}
+
+function updateCost() {
+    const slider = document.getElementById('tripDaysSlider');
+    if (!slider) return;
+    tripDays = parseInt(slider.value);
+    document.getElementById('tripDaysLabel').textContent = tripDays + ' day' + (tripDays > 1 ? 's' : '');
+
+    const data = TRIP_COST_DATA[costMode];
+    if (!data) return;
+    document.getElementById('costHotel').textContent = '₹' + (data.hotel * tripDays).toLocaleString('en-IN');
+    document.getElementById('costFood').textContent = '₹' + (data.food * tripDays).toLocaleString('en-IN');
+    document.getElementById('costTransport').textContent = '₹' + (data.transport * tripDays).toLocaleString('en-IN');
+    const total = (data.hotel + data.food + data.transport) * tripDays;
+    document.getElementById('costTotal').textContent = '₹' + total.toLocaleString('en-IN');
+}
+
+// ==========================================
+// AI ASSISTANT (Rule-Based)
+// ==========================================
+const AI_KNOWLEDGE = {
+    'best time': `🗓️ The best time to visit <strong>${CITY_NAME}</strong> is {{ city_data.best_season if city_data else 'October to March (winter season)' }} when the weather is most pleasant for sightseeing.`,
+    'best season': `🌤️ Visit during {{ city_data.best_season if city_data else 'October to March' }} for ideal weather conditions.`,
+    '1-day': `📋 <strong>1-Day Itinerary:</strong><br>Morning: Visit the top historical monument.<br>Afternoon: Explore a local museum or market.<br>Evening: Catch sunset at a famous viewpoint or ghat.`,
+    '3-day': `📋 <strong>3-Day Itinerary:</strong><br><strong>Day 1:</strong> Heritage & monuments<br><strong>Day 2:</strong> Temples, parks & local markets<br><strong>Day 3:</strong> Day trip to nearby places & food tour`,
+    'budget': `💸 <strong>Budget Tips:</strong><br>• Stay in hostels or budget hotels (₹400-700/night)<br>• Use local buses or metro for transport<br>• Eat at local dhabas and street food stalls<br>• Visit free attractions like gardens and ghats first`,
+    'hidden gem': `💎 Hidden gems are often listed in our attraction cards with the "Hidden Gem" category. Filter the cards by clicking the filter pill above!`,
+    'safe': `🛡️ ${CITY_NAME} is generally safe for tourists. Always keep your valuables secure, avoid deserted areas at night, and use registered taxis or app-based cabs.`,
+    'packing': `🎒 <strong>Packing Checklist:</strong><br>• Comfortable walking shoes<br>• Sunscreen & sunglasses<br>• Reusable water bottle<br>• Light cotton clothes (summers) / Warm layers (winters)<br>• First aid kit<br>• Power bank`,
+    'hello': `👋 Hello! I'm your SafeTour AI for ${CITY_NAME}. Ask me about best times to visit, itineraries, budget tips, or hidden gems!`,
+    'hi': `👋 Hi! How can I help you plan your ${CITY_NAME} trip today?`,
+};
+
+function askAI(question) {
+    document.getElementById('aiInput').value = question;
+    sendAI();
+}
+
+function sendAI() {
+    const input = document.getElementById('aiInput');
+    const q = input.value.trim();
+    if (!q) return;
+
+    const msgs = document.getElementById('aiMessages');
+    msgs.innerHTML += `<div class="ai-msg-user">${q}</div>`;
+
+    // Find best matching answer
+    const qLower = q.toLowerCase();
+    let answer = null;
+    for (const [key, val] of Object.entries(AI_KNOWLEDGE)) {
+        if (qLower.includes(key)) { answer = val; break; }
+    }
+    if (!answer) {
+        answer = `I don't have specific info on that yet, but I recommend checking our attraction cards for detailed visitor information about ${CITY_NAME}! 😊`;
+    }
+
+    setTimeout(() => {
+        msgs.innerHTML += `<div class="ai-msg-bot">${answer}</div>`;
+        msgs.scrollTop = msgs.scrollHeight;
+    }, 400);
+
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function closeAndSearch(name) {
+    closeModal();
+    // Open a search for the nearby attraction in the same city
+}
+
+// ==========================================
+// ESCAPE KEY & INIT
+// ==========================================
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.addEventListener('DOMContentLoaded', () => {
+    initMainMap();
+    updateCost();
+});
+</script>
+{% endblock %}

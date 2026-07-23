@@ -1,37 +1,83 @@
-/* Core Design System - Premium Light Theme with Floating Panels */
-:root {
-    --bg-primary: #f8fafc;        /* Soft slate background */
-    --bg-secondary: #ffffff;      /* Pure white cards */
+/* ==========================================
+   CORE DESIGN SYSTEM — Dark & Light Themes
+   ========================================== */
+
+/* DARK MODE (default) */
+[data-theme="dark"] {
+    --bg-primary: #0d0d1a;
+    --bg-secondary: #13131f;
+    --bg-glass: rgba(255, 255, 255, 0.05);
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --color-text-main: #f1f5f9;
+    --color-text-muted: #94a3b8;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 24px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* LIGHT MODE */
+[data-theme="light"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
     --bg-glass: rgba(255, 255, 255, 0.85);
     --border-glass: rgba(0, 0, 0, 0.06);
-    
-    --color-text-main: #0f172a;   /* Deep slate text */
-    --color-text-muted: #64748b;  /* Slate gray */
-    
-    --primary: #4f46e5;           /* Indigo */
-    --primary-hover: #4338ca;
-    --secondary: #10b981;         /* Emerald */
-    --secondary-hover: #059669;
-    
-    --gold: #d97706;              /* Rich Amber */
-    --gold-hover: #b45309;
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --cyan: #0891b2;              /* Darker Cyan */
-    --purple: #9333ea;            /* Purple */
-    
-    --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    /* 3D Floating Shadow System */
+    --color-text-main: #0f172a;
+    --color-text-muted: #64748b;
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 12px 24px -10px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
-    
+}
+
+/* Shared tokens (no theme override needed) */
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary: #10b981;
+    --secondary-hover: #059669;
+    --gold: #f59e0b;
+    --gold-hover: #d97706;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --cyan: #06b6d4;
+    --purple: #a855f7;
+    --accent: #6366f1;
+
+    --font-heading: 'Poppins', 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-numbers: 'Manrope', sans-serif;
+    --font-buttons: 'Plus Jakarta Sans', sans-serif;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     --radius: 20px;
     --radius-sm: 12px;
 }
+
+/* Theme toggle button */
+.theme-toggle {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1.5px solid var(--border-glass);
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    color: var(--color-text-muted);
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+    margin-left: 4px;
+}
+.theme-toggle:hover { border-color: var(--primary); color: var(--primary); transform: rotate(20deg); }
+
+/* Scrolled navbar */
+.navbar.scrolled {
+    background: var(--bg-secondary) !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15) !important;
+}
+
+/* Footer inner */
+.footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+}
+
 
 /* Base resets & styles */
 * {

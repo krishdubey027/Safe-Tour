@@ -1,33 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SafeTour - Geolocation-Based Tourist Safety & Partner Shop Promotions Portal.">
+    <meta name="description" content="SafeTour - Explore India's best destinations with real photos, ticket prices, live weather, and smart trip planning.">
     <title>{% block title %}SafeTour - Tourist Safety & Companion{% endblock %}</title>
-    
-    <!-- Google Fonts (Outfit & Inter) -->
+
+    <!-- Google Fonts — Poppins, Inter, Manrope, Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- FontAwesome for Premium Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet JS Map CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+    <!-- Swiper.js CSS (image gallery) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
     <!-- Custom Style Sheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- Premium Gradient Background elements -->
+    <!-- Background glow elements -->
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
 
-    <header class="navbar">
+    <header class="navbar" id="main-navbar">
         <div class="nav-container">
             <a href="{{ url_for('index') }}" class="nav-logo">
                 <i class="fa-solid fa-shield-halved logo-icon"></i>
@@ -35,22 +38,27 @@
             </a>
             <nav class="nav-links">
                 <a href="{{ url_for('index') }}" class="nav-item {% if active_page == 'home' %}active{% endif %}">Home</a>
-                
+
                 {% if session.get('user_id') %}
                     {% if session.get('role') == 'tourist' %}
-                        <a href="{{ url_for('tourist_dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">Tourist Hub</a>
+                        <a href="{{ url_for('tourist_dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">Explore</a>
                     {% else %}
                         <a href="{{ url_for('shop_dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">Shop Dashboard</a>
                     {% endif %}
-                    
+
                     <div class="user-badge">
                         <i class="fa-solid {% if session.get('role') == 'tourist' %}fa-user-astronaut{% else %}fa-store{% endif %}"></i>
-                        <span>{{ session.get('name', 'User') }} ({% if session.get('role') == 'tourist' %}Tourist{% else %}Partner{% endif %})</span>
+                        <span>{{ session.get('name', 'User') }}</span>
                     </div>
-                    <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+                    <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="btn-login"><i class="fa-solid fa-user"></i> Login / Register</a>
+                    <a href="{{ url_for('login') }}" class="btn-login"><i class="fa-solid fa-user"></i> Login</a>
                 {% endif %}
+
+                <!-- Dark / Light Mode Toggle -->
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
             </nav>
         </div>
     </header>
@@ -74,11 +82,51 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 SafeTour Companion. Made for CSE 2nd Year project evaluations. All rights reserved.</p>
+        <div class="footer-inner">
+            <span class="nav-logo" style="font-size: 1rem;">
+                <i class="fa-solid fa-shield-halved logo-icon" style="font-size: 1rem;"></i>
+                Safe<span class="logo-highlight">Tour</span>
+            </span>
+            <p>&copy; 2026 SafeTour Companion. CSE 2nd Year Project. All rights reserved.</p>
+        </div>
     </footer>
 
-    <!-- Leaflet JS Map Script -->
+    <!-- Leaflet JS Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Swiper.js (gallery) -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <!-- Fuse.js (fuzzy search) -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+
+    <!-- Dark mode persistence -->
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        function applyTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            themeIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            localStorage.setItem('safetour-theme', theme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('safetour-theme') || 'dark';
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        // Navbar scroll shadow
+        window.addEventListener('scroll', () => {
+            document.getElementById('main-navbar').classList.toggle('scrolled', window.scrollY > 20);
+        });
+    </script>
+
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
