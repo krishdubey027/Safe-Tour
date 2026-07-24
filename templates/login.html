@@ -9,7 +9,7 @@
         <p class="auth-subtitle">Login to access your personalized SafeTour workspace</p>
         
         <!-- Google Quick Login (Compulsory) -->
-        <a href="{{ url_for('google_login', role_hint=role_hint) }}" class="btn-google">
+        <a href="{{ url_for('google_login', role_hint=role_hint, next=next_url) }}" class="btn-google">
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo" class="google-logo">
             <span>Continue with Google</span>
         </a>
@@ -32,6 +32,9 @@
             <!-- Optional Role Helper based on landing page selection -->
             {% if role_hint %}
                 <input type="hidden" name="role_hint" value="{{ role_hint }}">
+            {% endif %}
+            {% if next_url %}
+                <input type="hidden" name="next" value="{{ next_url }}">
             {% endif %}
 
             <button type="submit" class="btn-primary btn-block">Sign In <i class="fa-solid fa-arrow-right-to-bracket"></i></button>

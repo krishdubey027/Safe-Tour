@@ -106,11 +106,23 @@ def seed_mock_data():
 # ==========================================
 # Real Weather & News Integration Helpers
 # ==========================================
+# In-memory cache: key = (lat, lon, date), value = (timestamp, result)
+_weather_cache = {}
+_WEATHER_TTL = 300  # 5 minutes
+
 def get_live_weather(lat, lon, travel_date):
     """
     Fetches real-time weather from Open-Meteo API.
+    Cached for 5 minutes to prevent repeated API calls.
     Only called if travel_date is within a 14-day window.
     """
+    import time
+    cache_key = (round(lat, 2), round(lon, 2), travel_date)
+    if cache_key in _weather_cache:
+        ts, result = _weather_cache[cache_key]
+        if time.time() - ts < _WEATHER_TTL:
+            return result
+
     try:
         dt_obj = datetime.strptime(travel_date, '%Y-%m-%d')
         today = datetime.utcnow().date()
@@ -118,7 +130,7 @@ def get_live_weather(lat, lon, travel_date):
         
         # Open-Meteo offers up to 16 days of daily forecast
         if 0 <= days_diff <= 14:
-            url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&forecast_days=16&timezone=auto"
+            url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&forecast_days=16&timezone=auto"
             response = requests.get(url, timeout=3).json()
             
             daily = response.get('daily', {})
@@ -128,7 +140,7 @@ def get_live_weather(lat, lon, travel_date):
                 idx = dates.index(travel_date)
                 temp_max = daily.get('temperature_2m_max', [])[idx]
                 temp_min = daily.get('temperature_2m_min', [])[idx]
-                wcode = daily.get('weathercode', [])[idx]
+                wcode = daily.get('weather_code', daily.get('weathercode', []))[idx]
                 
                 # WMO Weather Code to Condition & Icon map
                 condition_map = {
@@ -155,13 +167,16 @@ def get_live_weather(lat, lon, travel_date):
                 cond_text, icon, advisory = condition_map.get(wcode, ('Variable Conditions', 'fa-cloud-sun', 'Variable weather. Check local reports before starting.'))
                 avg_temp = round((temp_max + temp_min) / 2)
                 
-                return {
+                result = {
                     'temp': avg_temp,
                     'condition': f"{cond_text} ({temp_min}°C - {temp_max}°C)",
                     'icon_class': icon,
                     'advisory': advisory,
                     'is_historical': False
                 }
+                import time
+                _weather_cache[cache_key] = (time.time(), result)
+                return result
     except Exception as e:
         print(f"Weather API fetch failed: {e}")
     return None
@@ -278,9 +293,11 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     role_hint = request.args.get('role_hint', 'tourist')
+    next_url = request.args.get('next', '')
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        next_url = request.form.get('next', '')
         
         user = db_find_one('users', {'email': email})
         
@@ -292,14 +309,16 @@ def login():
             
             flash(f"Welcome back, {user['name']}!", "success")
             
-            if user['role'] == 'tourist':
+            if next_url and next_url.startswith('/'):
+                return redirect(next_url)
+            elif user['role'] == 'tourist':
                 return redirect(url_for('tourist_dashboard'))
             else:
                 return redirect(url_for('shop_dashboard'))
         else:
             flash("Invalid email or password. Please try again.", "danger")
             
-    return render_template('login.html', role_hint=role_hint)
+    return render_template('login.html', role_hint=role_hint, next_url=next_url)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -378,11 +397,13 @@ def google_login():
     On POST: Authenticates/Registers the selected identity.
     """
     role_hint = request.args.get('role_hint', 'tourist')
+    next_url = request.args.get('next', '')
     
     if request.method == 'POST':
         email = request.form.get('email')
         name = request.form.get('name')
         role = request.form.get('role', 'tourist')
+        next_url = request.form.get('next', '')
         
         # Try finding the user by email
         user = db_find_one('users', {'email': email})
@@ -410,7 +431,7 @@ def google_login():
                     'address': '',
                     'landmarks': '',
                     'ways_to_reach': '',
-                    'latitude': 28.6139,  # Default center coordinates (Delhi)
+                    'latitude': 28.6139,
                     'longitude': 77.2090,
                     'subscription_plan': 'basic',
                     'fancy_description': '',
@@ -425,12 +446,14 @@ def google_login():
         
         flash(f"Signed in successfully as {name} via Google!", "success")
         
-        if user['role'] == 'tourist':
+        if next_url and next_url.startswith('/'):
+            return redirect(next_url)
+        elif user['role'] == 'tourist':
             return redirect(url_for('tourist_dashboard'))
         else:
             return redirect(url_for('shop_dashboard'))
             
-    return render_template('google_login.html', role_hint=role_hint)
+    return render_template('google_login.html', role_hint=role_hint, next_url=next_url)
 
 
 # ==========================================
@@ -439,25 +462,28 @@ def google_login():
 @app.route('/tourist-dashboard')
 def tourist_dashboard():
     if not session.get('user_id') or session.get('role') != 'tourist':
+        # Preserve the search destination for post-login redirect
+        next_dest = request.url.replace(request.host_url.rstrip('/'), '')
         flash("Please login as a Tourist first.", "danger")
-        return redirect(url_for('login', role_hint='tourist'))
-        
-    search_location = request.args.get('location', '')
-    travel_date = request.args.get('travel_date', '')
+        return redirect(url_for('login', role_hint='tourist', next=next_dest))
+    search_location = request.args.get('location', '').strip()
+    travel_date = request.args.get('travel_date', '').strip()
     
-    # Preloaded maps configurations
-    map_center = [28.6139, 77.2090] # default Delhi
+    # If a location is searched, redirect directly to city guide
+    if search_location:
+        return redirect(url_for('city_guide', city_name=search_location, travel_date=travel_date))
+    
+    # Default dashboard (no location searched)
+    map_center = [28.6139, 77.2090]
     unlisted_shops = []
     sightseeing_spots = []
     listed_shops = []
-    
     weather = {
         'temp': 32,
         'condition': 'Clear Sunny',
         'icon_class': 'fa-sun',
         'advisory': 'Perfect weather for traveling. Carry water, light clothing, and sun protection.'
     }
-    
     news = [
         {
             'title': 'Monsoon Tourism Advisory Issued',
@@ -472,181 +498,6 @@ def tourist_dashboard():
             'source': 'Traffic Control'
         }
     ]
-    
-    if search_location:
-        loc_normalized = search_location.lower().strip()
-        
-        # 1. Coordinate lookup and Mock database mapping depending on city
-        if 'delhi' in loc_normalized:
-            map_center = [28.6139, 77.2090]
-            
-            # Fetch listed shops for Delhi
-            listed_shops = db_find('shops', {})
-            # Filter shops to make it look geographic
-            listed_shops = [s for s in listed_shops if s.get('latitude', 0) > 28.5 and s.get('latitude', 0) < 28.7]
-            
-            # Famous Unlisted Restaurants
-            unlisted_shops = [
-                {
-                    'name': "Karim's Historic Diner",
-                    'category': 'Restaurant',
-                    'rating': 4.6,
-                    'address': 'Gali Kababian, Old Delhi',
-                    'source': 'TripAdvisor Rating',
-                    'latitude': 28.6500,
-                    'longitude': 77.2330
-                },
-                {
-                    'name': 'Indian Accent Fine Dine',
-                    'category': 'Restaurant',
-                    'rating': 4.8,
-                    'address': 'The Lodhi Hotel, New Delhi',
-                    'source': 'Google Reviews (12k+ votes)',
-                    'latitude': 28.5912,
-                    'longitude': 77.2290
-                }
-            ]
-            # Sightseeing attractions
-            sightseeing_spots = [
-                {
-                    'name': 'India Gate Heritage Arch',
-                    'description': 'A prominent historical war memorial built in honors of soldiers.',
-                    'ticket_price': 'Free Entry',
-                    'latitude': 28.6129,
-                    'longitude': 77.2295
-                },
-                {
-                    'name': 'Qutub Minar Complex',
-                    'description': 'Ancient Victory Tower standing 73 meters tall.',
-                    'ticket_price': '₹40 (Indians), ₹600 (Foreigners)',
-                    'latitude': 28.5244,
-                    'longitude': 77.1855
-                }
-            ]
-        elif 'goa' in loc_normalized:
-            map_center = [15.4909, 73.8278]
-            
-            # Fetch Goa shops
-            listed_shops = db_find('shops', {})
-            listed_shops = [s for s in listed_shops if s.get('latitude', 0) > 15.0 and s.get('latitude', 0) < 15.7]
-            
-            unlisted_shops = [
-                {
-                    'name': "The Fisherman's Wharf",
-                    'category': 'Restaurant',
-                    'rating': 4.5,
-                    'address': 'Panaji Riverside Road',
-                    'source': 'Zomato gold selection',
-                    'latitude': 15.4989,
-                    'longitude': 73.8378
-                },
-                {
-                    'name': "Mum's Goan Kitchen",
-                    'category': 'Restaurant',
-                    'rating': 4.3,
-                    'address': 'Panaji central',
-                    'source': 'Google business reviews',
-                    'latitude': 15.4889,
-                    'longitude': 73.8178
-                }
-            ]
-            sightseeing_spots = [
-                {
-                    'name': 'Aguada Fort Lighthouse',
-                    'description': 'A historic 17th-century Portuguese fort standing on Sinquerim Beach.',
-                    'ticket_price': 'Free Entry',
-                    'latitude': 15.4925,
-                    'longitude': 73.7738
-                },
-                {
-                    'name': 'Baga Beach Watersports Hub',
-                    'description': 'Busy sand coast famous for parasailing, motor boat rides, and lounges.',
-                    'ticket_price': 'Free Entry (Activities cost extra)',
-                    'latitude': 15.5528,
-                    'longitude': 73.7517
-                }
-            ]
-        else:
-            # Fallback coordinate for any other city using string hashing to avoid blank maps!
-            hash_val = sum(ord(c) for c in loc_normalized)
-            map_center = [20.0 + (hash_val % 10), 75.0 + (hash_val % 10)]
-            
-            listed_shops = db_find('shops', {})
-            # Mock some items nearby the dynamic hash map center
-            for s in listed_shops:
-                s['latitude'] = map_center[0] + 0.005
-                s['longitude'] = map_center[1] - 0.003
-                
-            unlisted_shops = [
-                {
-                    'name': f'Famous {search_location} Hub',
-                    'category': 'Restaurant',
-                    'rating': 4.7,
-                    'address': f'Main Bazar, {search_location}',
-                    'source': 'Popular local recommendation',
-                    'latitude': map_center[0] - 0.008,
-                    'longitude': map_center[1] + 0.006
-                }
-            ]
-            sightseeing_spots = [
-                {
-                    'name': f'{search_location} City Garden',
-                    'description': 'Quiet public park containing fountains and flower layouts.',
-                    'ticket_price': '₹20 per visitor',
-                    'latitude': map_center[0] + 0.002,
-                    'longitude': map_center[1] + 0.008
-                }
-            ]
-            
-        # 2. Real Weather Integration (Open-Meteo) & Climate Fallback
-        if travel_date:
-            # Attempt to fetch live weather forecast (if within 14 days)
-            live_weather = get_live_weather(map_center[0], map_center[1], travel_date)
-            
-            if live_weather:
-                weather = live_weather
-            else:
-                # Fallback to monthly climatology average (since date is > 14 days or API offline)
-                try:
-                    dt_obj = datetime.strptime(travel_date, '%Y-%m-%d')
-                    month = dt_obj.month
-                    if month in [6, 7, 8, 9]: # Monsoon
-                        weather = {
-                            'temp': 28,
-                            'condition': 'Typical Monsoon Season',
-                            'icon_class': 'fa-cloud-showers-heavy',
-                            'advisory': 'Historically a wet monsoon period. Expect frequent rains. Carry an umbrella and water-resistant footwear.',
-                            'is_historical': True
-                        }
-                    elif month in [11, 12, 1, 2]: # Winter
-                        weather = {
-                            'temp': 16,
-                            'condition': 'Typical Cool Season',
-                            'icon_class': 'fa-snowflake',
-                            'advisory': 'Historically a winter period. Light woolens or jackets recommended for evenings.',
-                            'is_historical': True
-                        }
-                    else: # Summer
-                        weather = {
-                            'temp': 36,
-                            'condition': 'Typical Hot Season',
-                            'icon_class': 'fa-sun',
-                            'advisory': 'Historically a hot summer period. Dress in light cottons, carry sunscreen, and stay hydrated.',
-                            'is_historical': True
-                        }
-                except ValueError:
-                    pass
-                    
-        # 3. Real News Integration (GNews) & Fallbacks
-        if search_location:
-            live_news = get_live_news(search_location)
-            if live_news:
-                # Add real news to the top of the alerts feed
-                news = live_news + news
-                
-    # If a location is searched, redirect to the new city guide experience
-    if search_location:
-        return redirect(url_for('city_guide', city_name=search_location, travel_date=travel_date))
 
     return render_template('tourist_dashboard.html',
                            search_location=search_location,
@@ -753,8 +604,9 @@ def geocode_city(city_name):
 @app.route('/city-guide')
 def city_guide():
     if not session.get('user_id') or session.get('role') != 'tourist':
+        next_dest = request.url.replace(request.host_url.rstrip('/'), '')
         flash("Please login as a Tourist first.", "danger")
-        return redirect(url_for('login', role_hint='tourist'))
+        return redirect(url_for('login', role_hint='tourist', next=next_dest))
 
     import json as json_lib
 

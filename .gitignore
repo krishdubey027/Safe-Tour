@@ -7,22 +7,37 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pyw
 
-# Environment variables containing credentials
+# Environment variables (NEVER commit secrets)
 .env
 
-# Local logs and tunnel config outputs
+# Local tunnel / test outputs
 pinggy.txt
 pinggy_output.txt
 pinggy_t.txt
+pinggy_debug.txt
 pinggy_url.txt
 localhost_run_url.txt
 localhost_run_url_t.txt
 
 # Executables
 cloudflared.exe
+*.exe
 
-# Helper scripts
+# Helper scripts (local only)
 download_cf.py
 run_localhost_run.py
 run_tunnel.py
+
+# IDE & OS files
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# AWS EB deployment artifacts
+.elasticbeanstalk/
+
+# Logs
+*.log

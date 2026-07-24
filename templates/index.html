@@ -753,22 +753,125 @@
 .stagger-children > *:nth-child(3) { transition-delay: 0.2s; }
 .stagger-children > *:nth-child(4) { transition-delay: 0.3s; }
 
-/* Navbar force dark on hero scroll */
+
+/* ── LIGHT MODE HERO OVERRIDES ───────────────────── */
+[data-theme="light"] .hero-overlay {
+    background:
+        linear-gradient(to bottom,
+            rgba(10,5,30,0.40) 0%,
+            rgba(10,5,30,0.25) 40%,
+            rgba(10,5,30,0.60) 80%,
+            rgba(10,5,30,0.85) 100%
+        );
+}
+
+[data-theme="light"] .search-panel {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.40);
+    box-shadow:
+        0 32px 80px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+[data-theme="light"] .search-fields-row {
+    background: rgba(255,255,255,0.20);
+    border-color: rgba(255,255,255,0.35);
+}
+
+[data-theme="light"] .search-field:focus-within {
+    background: rgba(255,255,255,0.18);
+}
+
+[data-theme="light"] .sf-icon { color: rgba(255,255,255,0.75); }
+[data-theme="light"] .sf-label { color: rgba(255,255,255,0.7); }
+[data-theme="light"] .sf-input { color: #fff; }
+[data-theme="light"] .sf-input::placeholder { color: rgba(255,255,255,0.55); }
+[data-theme="light"] .sf-input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.65);
+}
+
+[data-theme="light"] .interest-label { color: rgba(255,255,255,0.7); }
+[data-theme="light"] .interest-pill {
+    border-color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.8);
+}
+[data-theme="light"] .interest-pill:hover,
+[data-theme="light"] .interest-pill.active {
+    background: rgba(99,102,241,0.5);
+    border-color: rgba(255,255,255,0.6);
+    color: #fff;
+}
+
+[data-theme="light"] .voice-btn {
+    border-color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.8);
+}
+[data-theme="light"] .voice-btn:hover {
+    background: rgba(255,255,255,0.28);
+    color: #fff;
+}
+
+[data-theme="light"] .hp-eyebrow {
+    background: rgba(99,102,241,0.25);
+    border-color: rgba(99,102,241,0.45);
+    color: #e0e7ff;
+}
+
+[data-theme="light"] .hero-dot { background: rgba(255,255,255,0.5); }
+[data-theme="light"] .hero-dot.active { background: #fff; }
+
+[data-theme="light"] .ts-num { color: #fff; }
+[data-theme="light"] .ts-label { color: rgba(255,255,255,0.65); }
+[data-theme="light"] .trust-divider { background: rgba(255,255,255,0.25); }
+
+/* Autocomplete dropdown — light mode */
+[data-theme="light"] .autocomplete-drop {
+    background: rgba(255,255,255,0.97);
+    border-color: rgba(0,0,0,0.1);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+}
+[data-theme="light"] .auto-section-label { color: #6b7280; }
+[data-theme="light"] .auto-item:hover { background: rgba(99,102,241,0.08); }
+[data-theme="light"] .auto-item-name { color: #111827; }
+[data-theme="light"] .auto-item-sub { color: #6b7280; }
+[data-theme="light"] .auto-item-badge { background: rgba(99,102,241,0.1); color: #6366f1; }
+
+/* Sections below hero — light mode */
+[data-theme="light"] .hp-section-title { color: #0f172a; }
+[data-theme="light"] .hp-cta-inner { background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #1e1b4b 100%); }
+[data-theme="light"] .hp-tagline { color: rgba(255,255,255,0.75); }
+[data-theme="light"] .hp-headline { color: #fff; }
+
+/* Gateway cards and feature cards are below hero, use bg vars */
+[data-theme="light"] .gw-card-tourist { background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #312e81 100%); }
+[data-theme="light"] .gw-card-shop { background: linear-gradient(135deg, #065f46 0%, #059669 50%, #065f46 100%); }
+
+[data-theme="light"] .feature-card-new {
+    background: rgba(255,255,255,0.9);
+    border-color: rgba(0,0,0,0.08);
+}
+[data-theme="light"] .sp-card {
+    background: rgba(255,255,255,0.9);
+    border-color: rgba(0,0,0,0.08);
+}
+
+/* body.at-hero — ALWAYS dark text-on-image regardless of theme */
 body.at-hero .navbar {
     background: transparent !important;
     border-bottom-color: transparent !important;
     box-shadow: none !important;
 }
-body.at-hero .nav-item { color: rgba(255,255,255,0.75); }
+body.at-hero .nav-item { color: rgba(255,255,255,0.80); }
 body.at-hero .nav-item:hover, body.at-hero .nav-item.active { color: #fff; }
-body.at-hero .nav-item::after { background: rgba(255,255,255,0.8); }
+body.at-hero .nav-item::after { background: rgba(255,255,255,0.85); }
 body.at-hero .nav-logo { color: #fff; }
 body.at-hero .logo-icon { color: #a5b4fc; }
 body.at-hero .logo-highlight { color: #6ee7b7; }
-body.at-hero .btn-login { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2); }
-body.at-hero .user-badge { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.15); }
-body.at-hero .btn-logout { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.1); }
-body.at-hero .theme-toggle { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15); }
+body.at-hero .btn-login { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.25); }
+body.at-hero .user-badge { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.2); }
+body.at-hero .btn-logout { background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.75); border-color: rgba(255,255,255,0.15); }
+body.at-hero .theme-toggle { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.2); }
 </style>
 {% endblock %}
 
@@ -781,11 +884,11 @@ body.at-hero .theme-toggle { background: rgba(255,255,255,0.1); color: rgba(255,
 
     <!-- Slideshow Background -->
     <div class="hero-slideshow" id="heroSlideshow">
-        <div class="hero-slide active" style="background-image: url('https://source.unsplash.com/1920x1080/?Taj+Mahal+India+sunrise&sig=1')"></div>
-        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Kerala+backwaters+India&sig=2')"></div>
-        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Rajasthan+fort+India+desert&sig=3')"></div>
-        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Goa+beach+India+sunset&sig=4')"></div>
-        <div class="hero-slide" style="background-image: url('https://source.unsplash.com/1920x1080/?Manali+mountains+snow+India&sig=5')"></div>
+        <div class="hero-slide active" style="background-image: url('https://picsum.photos/seed/india-agra/1920/1080')"></div>
+        <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/india-jaipur/1920/1080')"></div>
+        <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/india-kerala/1920/1080')"></div>
+        <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/india-goa/1920/1080')"></div>
+        <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/india-mountains/1920/1080')"></div>
     </div>
     <div class="hero-overlay"></div>
 
@@ -1324,7 +1427,11 @@ function submitHeroSearch(e) {
     if (!dest) {
         destInput.focus();
         destInput.style.outline = '2px solid #ef4444';
-        setTimeout(() => destInput.style.outline = '', 1500);
+        destInput.closest('.search-field').style.animation = 'shake 0.4s ease';
+        setTimeout(() => {
+            destInput.style.outline = '';
+            destInput.closest('.search-field').style.animation = '';
+        }, 1500);
         return;
     }
     // Save recent
@@ -1332,8 +1439,13 @@ function submitHeroSearch(e) {
     recent = [dest, ...recent.filter(r => r !== dest)].slice(0, 5);
     localStorage.setItem('safetour-recent', JSON.stringify(recent));
 
-    // Navigate to tourist dashboard which redirects to city guide
-    let url = `/tourist-dashboard?location=${encodeURIComponent(dest)}`;
+    // Show loading state on button
+    const btn = document.getElementById('heroSearchBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+    btn.disabled = true;
+
+    // Navigate directly to city guide — login redirect will preserve this URL
+    let url = `/city-guide?city_name=${encodeURIComponent(dest)}`;
     if (date) url += `&travel_date=${date}`;
     window.location.href = url;
 }

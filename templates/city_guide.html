@@ -199,6 +199,60 @@
 }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
+/* ── Card Image Wrapper ── */
+.card-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1a1a2e 0%, #302b63 100%);
+}
+.card-img-wrap .card-img-skeleton {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+        rgba(255,255,255,0.04) 0%,
+        rgba(255,255,255,0.09) 40%,
+        rgba(255,255,255,0.04) 80%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+    z-index: 1;
+    transition: opacity 0.4s ease;
+}
+.card-img-wrap .attraction-card-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 2;
+}
+.card-img-wrap .attraction-card-img.img-loaded {
+    opacity: 1 !important;
+}
+.card-img-wrap.img-ready .card-img-skeleton {
+    opacity: 0;
+    pointer-events: none;
+}
+/* Error state gradient */
+.card-img-wrap.img-error {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+}
+.card-img-wrap.img-error::after {
+    content: attr(data-attr-name);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+    font-family: var(--font-heading);
+    text-align: center;
+    padding: 12px;
+    z-index: 3;
+}
+
 .card-category-badge {
     position: absolute; top: 14px; left: 14px;
     background: rgba(0,0,0,0.55);
@@ -583,11 +637,11 @@
 
 <!-- ============ HERO ============ -->
 <section class="city-hero">
-    <div class="city-hero-bg"></div>
-    <img class="city-hero-img"
-         src="https://source.unsplash.com/1600x600/?{{ city_name }},India,travel"
-         alt="{{ city_name }}"
-         loading="lazy">
+    <div class="city-hero-bg" id="cityHeroBg"></div>
+    <img class="city-hero-img" id="cityHeroImg"
+         alt="{{ city_data.name if city_data else city_name }} city view, India"
+         loading="eager"
+         style="opacity:0;transition:opacity 1.2s ease;">
     <div class="city-hero-overlay"></div>
     <div class="city-hero-content">
         <div class="city-hero-breadcrumb">
@@ -681,12 +735,17 @@
                 <span class="card-free-badge">✅ FREE</span>
                 {% endif %}
 
-                <!-- Lazy-load image via Unsplash Source -->
-                <img class="attraction-card-img"
-                     src="https://source.unsplash.com/600x300/?{{ a.photo_keyword | urlencode }}"
-                     alt="{{ a.name }}"
-                     loading="lazy"
-                     onerror="this.src='https://source.unsplash.com/600x300/?India,tourism,travel'">
+                <!-- Accurate Wikipedia-powered Image -->
+                <div class="card-img-wrap"
+                     data-attr-name="{{ a.name }}"
+                     data-attr-city="{{ city_data.name if city_data else city_name }}"
+                     data-attr-idx="{{ loop.index0 }}">
+                    <div class="card-img-skeleton" aria-hidden="true"></div>
+                    <img class="attraction-card-img img-pending"
+                         alt="{{ a.name }} in {{ city_data.name if city_data else city_name }}, India"
+                         loading="lazy"
+                         style="opacity:0;transition:opacity 0.5s ease;">
+                </div>
 
                 <div class="card-body">
                     <div class="card-name">{{ a.name }}</div>
@@ -984,20 +1043,23 @@ function openModal(idx) {
         ${a.ticket.is_free ? '<div class="modal-chip free-chip"><i class="fa-solid fa-check-circle"></i><strong>FREE ENTRY</strong></div>' : ''}
     `;
 
-    // Gallery
+    // Gallery — fetch real Wikimedia Commons images
     const gallery = document.getElementById('modalGallery');
-    const keywords = [a.photo_keyword, a.name + ' India', a.category + ' India travel'];
-    gallery.innerHTML = keywords.map((kw, i) =>
-        `<div class="swiper-slide"><img src="https://source.unsplash.com/960x320/?${encodeURIComponent(kw)}&sig=${idx}_${i}" alt="${a.name}" loading="lazy" onerror="this.src='https://source.unsplash.com/960x320/?India,travel,tourism&sig=${Math.random()}'" /></div>`
-    ).join('');
+    gallery.innerHTML = `
+        <div class="swiper-slide">
+            <div class="modal-img-skeleton" style="width:100%;height:300px;background:linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.05) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
+        </div>`;
 
-    // Init / refresh swiper
+    // Init swiper immediately with skeleton
     if (modalSwiper) { modalSwiper.destroy(true, true); }
     modalSwiper = new Swiper('#modalSwiper', {
-        loop: true,
+        loop: false,
         pagination: { el: '.swiper-pagination', clickable: true },
         navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
     });
+
+    // Load real gallery images
+    loadModalGallery(a, gallery);
 
     // Overview tab
     document.getElementById('modalDesc').textContent = a.description;
@@ -1244,6 +1306,253 @@ function closeAndSearch(name) {
 }
 
 // ==========================================
+// WIKIPEDIA-POWERED ACCURATE IMAGE ENGINE
+// ==========================================
+
+// In-memory + localStorage cache (24h TTL)
+const IMAGE_CACHE = {};
+const CACHE_TTL = 86400000; // 24 hours in ms
+const CITY_CONTEXT = CITY_NAME;
+
+function imgCacheGet(key) {
+    // Check in-memory first
+    if (IMAGE_CACHE[key]) return IMAGE_CACHE[key];
+    // Check localStorage
+    try {
+        const raw = localStorage.getItem('safetour-img-' + key);
+        if (raw) {
+            const { ts, data } = JSON.parse(raw);
+            if (Date.now() - ts < CACHE_TTL) {
+                IMAGE_CACHE[key] = data;
+                return data;
+            }
+            localStorage.removeItem('safetour-img-' + key);
+        }
+    } catch(e) {}
+    return null;
+}
+
+function imgCacheSet(key, data) {
+    IMAGE_CACHE[key] = data;
+    try {
+        localStorage.setItem('safetour-img-' + key, JSON.stringify({ ts: Date.now(), data }));
+    } catch(e) {}
+}
+
+/**
+ * Fetch the main Wikipedia image for an attraction.
+ * Strategy:
+ *  1. Wikipedia REST summary API → thumbnail (most accurate, landmark-specific)
+ *  2. Wikipedia action API fallback
+ *  3. null if nothing found
+ */
+async function getWikiMainImage(attractionName, city) {
+    const cacheKey = (attractionName + '-' + city).toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const cached = imgCacheGet(cacheKey + '-main');
+    if (cached !== null) return cached;
+
+    // Strategy 1: Wikipedia REST summary API (fastest, returns thumbnail.source)
+    const searchTerms = [
+        attractionName,
+        attractionName + ', ' + city,
+        attractionName + ' ' + city,
+    ];
+
+    for (const term of searchTerms) {
+        try {
+            const wikiTitle = term.trim().replace(/ /g, '_');
+            const resp = await fetch(
+                `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`,
+                { signal: AbortSignal.timeout(5000) }
+            );
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.thumbnail && data.thumbnail.source) {
+                    // Upgrade to high-res (replace size suffix)
+                    let url = data.thumbnail.source;
+                    url = url.replace(/\/\d+px-/, '/800px-');
+                    imgCacheSet(cacheKey + '-main', url);
+                    return url;
+                }
+            }
+        } catch(e) { /* try next */ }
+    }
+
+    // Strategy 2: Wikipedia search + pageimages API
+    try {
+        const searchQ = encodeURIComponent(attractionName + ' ' + city + ' India');
+        const resp = await fetch(
+            `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${searchQ}&srlimit=1&format=json&origin=*`,
+            { signal: AbortSignal.timeout(5000) }
+        );
+        if (resp.ok) {
+            const data = await resp.json();
+            const results = data.query?.search || [];
+            if (results.length > 0) {
+                const pageTitle = encodeURIComponent(results[0].title);
+                const imgResp = await fetch(
+                    `https://en.wikipedia.org/w/api.php?action=query&titles=${pageTitle}&prop=pageimages&pithumbsize=800&format=json&origin=*`,
+                    { signal: AbortSignal.timeout(5000) }
+                );
+                if (imgResp.ok) {
+                    const imgData = await imgResp.json();
+                    const pages = imgData.query?.pages || {};
+                    const page = Object.values(pages)[0];
+                    if (page?.thumbnail?.source) {
+                        const url = page.thumbnail.source;
+                        imgCacheSet(cacheKey + '-main', url);
+                        return url;
+                    }
+                }
+            }
+        }
+    } catch(e) {}
+
+    // Cache null result to avoid hammering the API
+    imgCacheSet(cacheKey + '-main', null);
+    return null;
+}
+
+/**
+ * Fetch multiple images from Wikimedia Commons for the modal gallery.
+ * Returns array of image URLs (up to 5).
+ */
+async function getWikiGalleryImages(attractionName, city) {
+    const cacheKey = (attractionName + '-' + city).toLowerCase().replace(/[^a-z0-9]/g, '-') + '-gallery';
+    const cached = imgCacheGet(cacheKey);
+    if (cached !== null) return cached;
+
+    const urls = [];
+    const query = encodeURIComponent(attractionName + ' ' + city);
+
+    try {
+        // Wikimedia Commons file search
+        const resp = await fetch(
+            `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${query}&gsrnamespace=6&gsrlimit=8&prop=imageinfo&iiprop=url|mime|size&iiurlwidth=900&format=json&origin=*`,
+            { signal: AbortSignal.timeout(8000) }
+        );
+        if (resp.ok) {
+            const data = await resp.json();
+            const pages = data.query?.pages || {};
+            for (const page of Object.values(pages)) {
+                const ii = page.imageinfo?.[0];
+                if (!ii) continue;
+                // Only images (not SVG, PDF, audio, video)
+                if (!ii.mime || !ii.mime.startsWith('image/')) continue;
+                if (ii.mime === 'image/svg+xml') continue;
+                // Prefer landscape (wider than tall)
+                const url = ii.thumburl || ii.url;
+                if (url) urls.push(url);
+                if (urls.length >= 5) break;
+            }
+        }
+    } catch(e) {}
+
+    // If commons didn't get enough, prepend the main Wikipedia image
+    if (urls.length < 3) {
+        const main = await getWikiMainImage(attractionName, city);
+        if (main && !urls.includes(main)) urls.unshift(main);
+    }
+
+    imgCacheSet(cacheKey, urls);
+    return urls;
+}
+
+/**
+ * Load real Wikipedia image into a card image wrapper.
+ */
+async function loadCardImage(wrapper) {
+    const name = wrapper.dataset.attrName;
+    const city = wrapper.dataset.attrCity;
+    const img = wrapper.querySelector('.attraction-card-img');
+    if (!img || img.classList.contains('img-loaded')) return;
+
+    const url = await getWikiMainImage(name, city);
+
+    if (url) {
+        img.onload = () => {
+            img.classList.add('img-loaded');
+            wrapper.classList.add('img-ready');
+            wrapper.classList.remove('img-error');
+        };
+        img.onerror = () => {
+            wrapper.classList.add('img-error', 'img-ready');
+            img.style.display = 'none';
+        };
+        img.src = url;
+    } else {
+        // No image found — show gradient with name
+        wrapper.classList.add('img-error', 'img-ready');
+    }
+}
+
+/**
+ * Load card images via IntersectionObserver (lazy, performant).
+ */
+function loadCardImages() {
+    const wrappers = document.querySelectorAll('.card-img-wrap');
+    if (!wrappers.length) return;
+
+    if ('IntersectionObserver' in window) {
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    loadCardImage(entry.target);
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { rootMargin: '200px' }); // Start loading 200px before visible
+
+        wrappers.forEach(w => obs.observe(w));
+    } else {
+        // Fallback: load all immediately
+        wrappers.forEach(w => loadCardImage(w));
+    }
+}
+
+/**
+ * Load modal gallery with real Wikimedia Commons images.
+ * Called after openModal() sets up skeleton.
+ */
+async function loadModalGallery(attraction, galleryEl) {
+    const urls = await getWikiGalleryImages(attraction.name, CITY_CONTEXT);
+
+    if (!urls || urls.length === 0) {
+        // Fallback: show gradient placeholder
+        galleryEl.innerHTML = `
+            <div class="swiper-slide">
+                <div style="width:100%;height:300px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;">
+                    <span style="color:rgba(255,255,255,0.5);font-family:var(--font-heading);font-size:1.1rem;">${attraction.name}</span>
+                </div>
+            </div>`;
+    } else {
+        galleryEl.innerHTML = urls.map((url, i) => `
+            <div class="swiper-slide">
+                <img
+                    src="${url}"
+                    alt="${attraction.name} in ${CITY_CONTEXT}, India — photo ${i + 1}"
+                    style="width:100%;height:300px;object-fit:cover;display:block;"
+                    loading="${i === 0 ? 'eager' : 'lazy'}"
+                    onerror="this.parentElement.style.background='linear-gradient(135deg,#4f46e5,#7c3aed)';this.remove();"
+                />
+            </div>`).join('');
+    }
+
+    // Reinit Swiper with real slides
+    if (modalSwiper) {
+        modalSwiper.destroy(true, true);
+    }
+    modalSwiper = new Swiper('#modalSwiper', {
+        loop: urls.length > 1,
+        pagination: { el: '.swiper-pagination', clickable: true },
+        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+        effect: 'fade',
+        fadeEffect: { crossFade: true },
+        speed: 600,
+    });
+}
+
+// ==========================================
 // ESCAPE KEY & INIT
 // ==========================================
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -1251,6 +1560,25 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 document.addEventListener('DOMContentLoaded', () => {
     initMainMap();
     updateCost();
+    // Start loading card images via IntersectionObserver
+    loadCardImages();
+    // Load city hero image
+    loadCityHeroImage();
 });
+
+async function loadCityHeroImage() {
+    const heroImg = document.getElementById('cityHeroImg');
+    if (!heroImg) return;
+    const cityName = CITY_NAME;
+    const url = await getWikiMainImage(cityName, 'India');
+    if (url) {
+        heroImg.onload = () => { heroImg.style.opacity = '1'; };
+        heroImg.src = url;
+    } else {
+        // Fallback gradient
+        const bg = document.getElementById('cityHeroBg');
+        if (bg) bg.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+    }
+}
 </script>
 {% endblock %}
